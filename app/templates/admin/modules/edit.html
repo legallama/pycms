@@ -222,7 +222,7 @@
                                             <label class="uk-form-label">Image URL</label>
                                             <div class="uk-flex">
                                                 <input class="uk-input uk-form-small" type="text" name="slide_img[]" value="{{ slide.image }}">
-                                                <button type="button" class="uk-button uk-button-default uk-button-small" onclick="currentSlideInput=this.previousElementSibling; openMediaPicker('slide')">...</button>
+                                                <button type="button" class="uk-button uk-button-default uk-button-small" onclick="currentSlideInput=this.previousElementSibling; openMediaPicker('slide')">Browse</button>
                                             </div>
                                         </div>
                                         <div class="uk-width-1-3@s">
@@ -238,6 +238,128 @@
                                 {% endfor %}
                             </div>
                             <button type="button" class="uk-button uk-button-default uk-button-small uk-width-1-1 uk-margin-small" onclick="addSlide()">+ Add Slide</button>
+                        </div>
+                    </div>
+
+                    <div class="module-config uk-hidden" data-type="gallery">
+                        <div class="uk-card uk-card-default uk-card-body uk-margin-small">
+                            <h4 class="uk-card-title">Gallery Settings</h4>
+                            <div class="uk-grid-small uk-child-width-1-2@s" uk-grid>
+                                <div>
+                                    <label class="uk-form-label">Grid Columns</label>
+                                    <select class="uk-select" name="grid_cols">
+                                        <option value="1-2" {{ 'selected' if config and config.get('grid_cols') == '1-2' else '' }}>2 Columns</option>
+                                        <option value="1-3" {{ 'selected' if not config or config.get('grid_cols') == '1-3' else '' }}>3 Columns</option>
+                                        <option value="1-4" {{ 'selected' if config and config.get('grid_cols') == '1-4' else '' }}>4 Columns</option>
+                                        <option value="1-5" {{ 'selected' if config and config.get('grid_cols') == '1-5' else '' }}>5 Columns</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="uk-form-label">Grid Gap</label>
+                                    <select class="uk-select" name="grid_gap">
+                                        <option value="small" {{ 'selected' if not config or config.get('grid_gap') == 'small' else '' }}>Small</option>
+                                        <option value="medium" {{ 'selected' if config and config.get('grid_gap') == 'medium' else '' }}>Medium</option>
+                                        <option value="large" {{ 'selected' if config and config.get('grid_gap') == 'large' else '' }}>Large</option>
+                                        <option value="collapse" {{ 'selected' if config and config.get('grid_gap') == 'collapse' else '' }}>No Gap</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label><input class="uk-checkbox" type="checkbox" name="lightbox" {{ 'checked' if not config or config.get('lightbox', True) else '' }}> Enable Lightbox</label>
+                                </div>
+                                <div>
+                                    <label><input class="uk-checkbox" type="checkbox" name="masonry" {{ 'checked' if config and config.get('masonry') else '' }}> Masonry Grid</label>
+                                </div>
+                            </div>
+                            
+                            <hr>
+                            <h4 class="uk-text-muted uk-text-uppercase">Gallery Images</h4>
+                            <div id="gallery-container">
+                                {% set gallery_items = config.get('items', []) if (config and module and module.type == 'gallery') else [] %}
+                                {% for item in gallery_items %}
+                                <div class="gallery-item uk-background-muted uk-padding-small uk-margin-small uk-position-relative">
+                                    <a class="uk-position-top-right uk-padding-small uk-text-danger" onclick="this.parentElement.remove()" uk-icon="trash" style="cursor: pointer;"></a>
+                                    <div class="uk-grid-small" uk-grid>
+                                        <div class="uk-width-1-2@s">
+                                            <label class="uk-form-label">Image URL</label>
+                                            <div class="uk-flex">
+                                                <input class="uk-input uk-form-small" type="text" name="gallery_img[]" value="{{ item.image }}">
+                                                <button type="button" class="uk-button uk-button-default uk-button-small" onclick="currentGalleryInput=this.previousElementSibling; openMediaPicker('gallery')">Browse</button>
+                                            </div>
+                                        </div>
+                                        <div class="uk-width-1-2@s">
+                                            <label class="uk-form-label">Caption / Alt Text</label>
+                                            <input class="uk-input uk-form-small" type="text" name="gallery_caption[]" value="{{ item.caption }}">
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <button type="button" class="uk-button uk-button-default uk-button-small uk-width-1-1 uk-margin-small" onclick="addGalleryItem()">+ Add Image</button>
+                        </div>
+                    </div>
+
+                    <div class="module-config uk-hidden" data-type="media_lightbox">
+                        <div class="uk-card uk-card-default uk-card-body uk-margin-small">
+                            <h4 class="uk-card-title">Media Showcase Settings</h4>
+                            <div class="uk-grid-small uk-child-width-1-2@s" uk-grid>
+                                <div>
+                                    <label class="uk-form-label">Grid Columns</label>
+                                    <select class="uk-select" name="grid_cols">
+                                        <option value="1-2" {{ 'selected' if config and config.get('grid_cols') == '1-2' else '' }}>2 Columns</option>
+                                        <option value="1-3" {{ 'selected' if not config or config.get('grid_cols') == '1-3' else '' }}>3 Columns</option>
+                                        <option value="1-4" {{ 'selected' if config and config.get('grid_cols') == '1-4' else '' }}>4 Columns</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="uk-form-label">Grid Gap</label>
+                                    <select class="uk-select" name="grid_gap">
+                                        <option value="small" {{ 'selected' if config and config.get('grid_gap') == 'small' else '' }}>Small</option>
+                                        <option value="medium" {{ 'selected' if not config or config.get('grid_gap') == 'medium' else '' }}>Medium</option>
+                                        <option value="large" {{ 'selected' if config and config.get('grid_gap') == 'large' else '' }}>Large</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <hr>
+                            <h4 class="uk-text-muted uk-text-uppercase">Lightbox Items</h4>
+                            <div id="media-lightbox-container">
+                                {% set media_items = config.get('items', []) if (config and module and module.type == 'media_lightbox') else [] %}
+                                {% for item in media_items %}
+                                <div class="media-lightbox-item uk-background-muted uk-padding-small uk-margin-small uk-position-relative">
+                                    <a class="uk-position-top-right uk-padding-small uk-text-danger" onclick="this.parentElement.remove()" uk-icon="trash" style="cursor: pointer;"></a>
+                                    <div class="uk-grid-small" uk-grid>
+                                        <div class="uk-width-1-4@s">
+                                            <label class="uk-form-label">Type</label>
+                                            <select class="uk-select uk-form-small" name="m_type[]">
+                                                <option value="image" {{ 'selected' if item.type == 'image' else '' }}>Image</option>
+                                                <option value="youtube" {{ 'selected' if item.type == 'youtube' else '' }}>YouTube</option>
+                                                <option value="vimeo" {{ 'selected' if item.type == 'vimeo' else '' }}>Vimeo</option>
+                                                <option value="video" {{ 'selected' if item.type == 'video' else '' }}>Video File</option>
+                                            </select>
+                                        </div>
+                                        <div class="uk-width-1-2@s">
+                                            <label class="uk-form-label">Media URL</label>
+                                            <div class="uk-flex">
+                                                <input class="uk-input uk-form-small" type="text" name="m_url[]" value="{{ item.url }}" placeholder="URL or video link">
+                                                <button type="button" class="uk-button uk-button-default uk-button-small" onclick="currentMediaUrlInput=this.previousElementSibling; openMediaPicker('m_url')">Browse</button>
+                                            </div>
+                                        </div>
+                                        <div class="uk-width-1-4@s">
+                                            <label class="uk-form-label">Poster/Thumb</label>
+                                            <div class="uk-flex">
+                                                <input class="uk-input uk-form-small" type="text" name="m_thumb[]" value="{{ item.thumb }}" placeholder="Custom thumbnail">
+                                                <button type="button" class="uk-button uk-button-default uk-button-small" onclick="currentMediaThumbInput=this.previousElementSibling; openMediaPicker('m_thumb')">...</button>
+                                            </div>
+                                        </div>
+                                        <div class="uk-width-1-1">
+                                            <label class="uk-form-label">Caption</label>
+                                            <input class="uk-input uk-form-small" type="text" name="m_caption[]" value="{{ item.caption }}">
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <button type="button" class="uk-button uk-button-default uk-button-small uk-width-1-1 uk-margin-small" onclick="addMediaLightboxItem()">+ Add Media Item</button>
                         </div>
                     </div>
                 </div>
@@ -307,7 +429,7 @@
                     <label class="uk-form-label">Image URL</label>
                     <div class="uk-flex">
                         <input class="uk-input uk-form-small slide-img-input" type="text" name="slide_img[]" value="">
-                        <button type="button" class="uk-button uk-button-default uk-button-small" onclick="currentSlideInput=this.previousElementSibling; openMediaPicker('slide')">...</button>
+                        <button type="button" class="uk-button uk-button-default uk-button-small" onclick="currentSlideInput=this.previousElementSibling; openMediaPicker('slide')">Browse</button>
                     </div>
                 </div>
                 <div class="uk-width-1-3@s">
@@ -317,6 +439,75 @@
                 <div class="uk-width-1-3@s">
                     <label class="uk-form-label">URL / Link</label>
                     <input class="uk-input uk-form-small" type="text" name="slide_url[]" value="#">
+                </div>
+            </div>
+        `;
+        container.appendChild(div);
+        UIkit.grid(div.querySelector('[uk-grid]'));
+        UIkit.icon(div.querySelector('[uk-icon]'));
+    }
+
+    let currentGalleryInput = null;
+    function addGalleryItem() {
+        const container = document.getElementById('gallery-container');
+        const div = document.createElement('div');
+        div.className = 'gallery-item uk-background-muted uk-padding-small uk-margin-small uk-position-relative';
+        div.innerHTML = `
+            <a class="uk-position-top-right uk-padding-small uk-text-danger" onclick="this.parentElement.remove()" uk-icon="trash" style="cursor: pointer;"></a>
+            <div class="uk-grid-small" uk-grid>
+                <div class="uk-width-1-2@s">
+                    <label class="uk-form-label">Image URL</label>
+                    <div class="uk-flex">
+                        <input class="uk-input uk-form-small" type="text" name="gallery_img[]" value="">
+                        <button type="button" class="uk-button uk-button-default uk-button-small" onclick="currentGalleryInput=this.previousElementSibling; openMediaPicker('gallery')">Browse</button>
+                    </div>
+                </div>
+                <div class="uk-width-1-2@s">
+                    <label class="uk-form-label">Caption / Alt Text</label>
+                    <input class="uk-input uk-form-small" type="text" name="gallery_caption[]" value="">
+                </div>
+            </div>
+        `;
+        container.appendChild(div);
+        UIkit.grid(div.querySelector('[uk-grid]'));
+        UIkit.icon(div.querySelector('[uk-icon]'));
+    }
+
+    let currentMediaUrlInput = null;
+    let currentMediaThumbInput = null;
+    function addMediaLightboxItem() {
+        const container = document.getElementById('media-lightbox-container');
+        const div = document.createElement('div');
+        div.className = 'media-lightbox-item uk-background-muted uk-padding-small uk-margin-small uk-position-relative';
+        div.innerHTML = `
+            <a class="uk-position-top-right uk-padding-small uk-text-danger" onclick="this.parentElement.remove()" uk-icon="trash" style="cursor: pointer;"></a>
+            <div class="uk-grid-small" uk-grid>
+                <div class="uk-width-1-4@s">
+                    <label class="uk-form-label">Type</label>
+                    <select class="uk-select uk-form-small" name="m_type[]">
+                        <option value="image">Image</option>
+                        <option value="youtube">YouTube</option>
+                        <option value="vimeo">Vimeo</option>
+                        <option value="video">Video File</option>
+                    </select>
+                </div>
+                <div class="uk-width-1-2@s">
+                    <label class="uk-form-label">Media URL</label>
+                    <div class="uk-flex">
+                        <input class="uk-input uk-form-small" type="text" name="m_url[]" value="" placeholder="URL or video link">
+                        <button type="button" class="uk-button uk-button-default uk-button-small" onclick="currentMediaUrlInput=this.previousElementSibling; openMediaPicker('m_url')">Browse</button>
+                    </div>
+                </div>
+                <div class="uk-width-1-4@s">
+                    <label class="uk-form-label">Poster/Thumb</label>
+                    <div class="uk-flex">
+                        <input class="uk-input uk-form-small" type="text" name="m_thumb[]" value="" placeholder="Custom thumbnail">
+                        <button type="button" class="uk-button uk-button-default uk-button-small" onclick="currentMediaThumbInput=this.previousElementSibling; openMediaPicker('m_thumb')">...</button>
+                    </div>
+                </div>
+                <div class="uk-width-1-1">
+                    <label class="uk-form-label">Caption</label>
+                    <input class="uk-input uk-form-small" type="text" name="m_caption[]" value="">
                 </div>
             </div>
         `;
@@ -347,6 +538,12 @@
         if (event.data.type === 'insertImage' || event.data.mceAction === 'insertImage') {
             if (window.targetPicker === 'slide' && currentSlideInput) {
                 currentSlideInput.value = event.data.url;
+            } else if (window.targetPicker === 'gallery' && currentGalleryInput) {
+                currentGalleryInput.value = event.data.url;
+            } else if (window.targetPicker === 'm_url' && currentMediaUrlInput) {
+                currentMediaUrlInput.value = event.data.url;
+            } else if (window.targetPicker === 'm_thumb' && currentMediaThumbInput) {
+                currentMediaThumbInput.value = event.data.url;
             } else {
                 const heroInput = document.getElementById('hero-image-url');
                 if (heroInput) heroInput.value = event.data.url;

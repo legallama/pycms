@@ -201,6 +201,44 @@ def modules_edit(module_id: int):
                         "url": urls[i] if i < len(urls) else "#"
                     })
             cfg["slides"] = slides
+        elif m.type == "gallery":
+            cfg["grid_cols"] = request.form.get("grid_cols") or "1-3"
+            cfg["grid_gap"] = request.form.get("grid_gap") or "small"
+            cfg["lightbox"] = bool(request.form.get("lightbox"))
+            cfg["masonry"] = bool(request.form.get("masonry"))
+            
+            # Process items
+            imgs = request.form.getlist("gallery_img[]")
+            captions = request.form.getlist("gallery_caption[]")
+            
+            items = []
+            for i in range(len(imgs)):
+                if imgs[i]:
+                    items.append({
+                        "image": imgs[i],
+                        "caption": captions[i] if i < len(captions) else ""
+                    })
+            cfg["items"] = items
+        elif m.type == "media_lightbox":
+            cfg["grid_cols"] = request.form.get("grid_cols") or "1-3"
+            cfg["grid_gap"] = request.form.get("grid_gap") or "medium"
+            
+            # Process items
+            m_types = request.form.getlist("m_type[]")
+            urls = request.form.getlist("m_url[]")
+            thumbs = request.form.getlist("m_thumb[]")
+            captions = request.form.getlist("m_caption[]")
+            
+            items = []
+            for i in range(len(urls)):
+                if urls[i]:
+                    items.append({
+                        "type": m_types[i] if i < len(m_types) else "image",
+                        "url": urls[i],
+                        "thumb": thumbs[i] if i < len(thumbs) else "",
+                        "caption": captions[i] if i < len(captions) else ""
+                    })
+            cfg["items"] = items
 
         if not m.title:
             flash("Title is required.", "danger")

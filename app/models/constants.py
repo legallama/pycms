@@ -8,4 +8,6 @@ MODULE_TYPES = [
     ("search", "Search Box"),
     ("hero", "Hero Cover (Parallax)"),
     ("slider", "Dynamic Slider (UIkit)"),
+    ("gallery", "Image Gallery (UIkit Lightbox)"),
+    ("media_lightbox", "Media Showcase (Video & Image Lightbox)"),
 ]

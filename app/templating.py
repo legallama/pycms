@@ -267,6 +267,106 @@ def _render_module(mod: Module, config: dict) -> str:
             f'</div>'
         )
 
+    elif mod_type == "gallery":
+        items = config.get("items", [])
+        grid_cols = config.get("grid_cols", "1-3")
+        grid_gap = config.get("grid_gap", "small")
+        enable_lightbox = config.get("lightbox", True)
+        masonry = config.get("masonry", False)
+        
+        grid_attr = f'uk-grid="masonry: {str(masonry).lower()}"' if masonry else 'uk-grid'
+        gap_class = f'uk-grid-{grid_gap}' if grid_gap != 'small' else 'uk-grid-small'
+        lightbox_attr = 'uk-lightbox="animation: slide"' if enable_lightbox else ''
+        
+        items_html = ""
+        for item in items:
+            img = item.get("image") or ""
+            if not img: continue
+            caption = item.get("caption", "")
+            
+            # Use lightbox if enabled
+            inner_html = ""
+            if enable_lightbox:
+                inner_html = (
+                    f'<a class="uk-inline-hover uk-display-block" href="{img}" data-caption="{caption}">'
+                    f'  <img src="{img}" alt="{caption}" class="uk-transition-scale-up uk-transition-opaque">'
+                    f'  <div class="uk-overlay uk-overlay-primary uk-position-bottom uk-transition-fade">'
+                    f'    <p>{caption}</p>'
+                    f'  </div>'
+                    f'</a>'
+                )
+            else:
+                inner_html = (
+                    f'<div class="uk-inline-hover">'
+                    f'  <img src="{img}" alt="{caption}">'
+                    f'  <div class="uk-overlay uk-overlay-primary uk-position-bottom uk-transition-fade">'
+                    f'    <p>{caption}</p>'
+                    f'  </div>'
+                    f'</div>'
+                )
+            
+            items_html += f'<div>{inner_html}</div>'
+            
+        return Markup(
+            f'<div {lightbox_attr}>'
+            f'  <div class="{gap_class} uk-child-width-1-1 uk-child-width-{grid_cols}@m" {grid_attr}>'
+            f'    {items_html}'
+            f'  </div>'
+            f'</div>'
+        )
+
+    elif mod_type == "media_lightbox":
+        items = config.get("items", [])
+        grid_cols = config.get("grid_cols", "1-3")
+        grid_gap = config.get("grid_gap", "medium")
+        
+        gap_class = f'uk-grid-{grid_gap}' if grid_gap != 'small' else 'uk-grid-small'
+        
+        items_html = ""
+        for item in items:
+            m_type = item.get("type", "image")
+            m_url = item.get("url", "")
+            if not m_url: continue
+            m_thumb = item.get("thumb", "")
+            caption = item.get("caption", "")
+            
+            # Decide on the thumbnail
+            display_thumb = m_thumb
+            if not display_thumb:
+                if m_type == "image":
+                    display_thumb = m_url
+                else:
+                    # Placeholder for videos if no thumb provided
+                    display_thumb = "https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?q=80&w=2070&auto=format&fit=crop"
+
+            # Video icon overlay for non-image types
+            overlay_icon = ""
+            if m_type != "image":
+                overlay_icon = '<div class="uk-position-center"><span uk-icon="icon: play-circle; ratio: 3" class="uk-light"></span></div>'
+            
+            items_html += (
+                f'<div>'
+                f'  <div class="uk-inline-hover uk-display-block uk-link-reset">'
+                f'    <a href="{m_url}" data-caption="{caption}" uk-lightbox>'
+                f'      <div class="uk-cover-container uk-height-medium">'
+                f'        <img src="{display_thumb}" alt="{caption}" uk-cover class="uk-transition-scale-up uk-transition-opaque">'
+                f'        <div class="uk-overlay uk-overlay-primary uk-position-cover uk-transition-fade" style="background: rgba(0,0,0,0.3);"></div>'
+                f'        {overlay_icon}'
+                f'        <div class="uk-overlay uk-overlay-primary uk-position-bottom uk-padding-small uk-transition-slide-bottom-small">'
+                f'          <p class="uk-margin-remove uk-text-truncate">{caption or m_type.capitalize()}</p>'
+                f'        </div>'
+                f'      </div>'
+                f'    </a>'
+                f'  </div>'
+                f'</div>'
+            )
+            
+        return Markup(
+            f'<div class="{gap_class} uk-child-width-1-1 uk-child-width-{grid_cols}@m" uk-grid uk-lightbox="animation: fade">'
+            f'  {items_html}'
+            f'</div>'
+        )
+
     return ""
 
 
