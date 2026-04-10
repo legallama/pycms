@@ -1,0 +1,35 @@
+{% extends "admin/base.html" %}
+
+{% block title %}New contact{% endblock %}
+{% block page_title %}New contact{% endblock %}
+
+{% block content %}
+  <div class="uk-card uk-card-default uk-card-body uk-width-1-1 uk-width-1-2@l">
+    <form method="post">
+      {{ csrf_token() }}
+
+      <div class="uk-margin">
+        <label class="uk-form-label">Name</label>
+        <input class="uk-input" name="name" required>
+      </div>
+      <div class="uk-margin">
+        <label class="uk-form-label">Email</label>
+        <input class="uk-input" name="email">
+      </div>
+      <div class="uk-margin">
+        <label class="uk-form-label">Phone</label>
+        <input class="uk-input" name="phone">
+      </div>
+      <div class="uk-margin">
+        <label class="uk-form-label">Company</label>
+        <input class="uk-input" name="company">
+      </div>
+
+      <div class="uk-margin uk-flex uk-flex-between">
+        <a class="uk-button uk-button-default" href="{{ url_for('crm.contacts_list') }}">Back</a>
+        <button class="uk-button uk-button-primary" type="submit">Create</button>
+      </div>
+    </form>
+  </div>
+{% endblock %}
+

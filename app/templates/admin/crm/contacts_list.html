@@ -1,0 +1,48 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Contacts{% endblock %}
+{% block page_title %}Contacts{% endblock %}
+
+{% block content %}
+  <div class="uk-card uk-card-default uk-card-body">
+    <div class="uk-flex uk-flex-between uk-flex-middle uk-flex-wrap">
+      <h3 class="uk-card-title uk-margin-remove">Contacts</h3>
+      <div class="uk-flex uk-flex-middle uk-grid-small" uk-grid>
+        <div>
+          <form method="get">
+            <input class="uk-input uk-form-small" type="text" name="q" placeholder="Search name" value="{{ q or '' }}">
+          </form>
+        </div>
+        <div>
+          <a class="uk-button uk-button-primary uk-button-small" href="{{ url_for('crm.contacts_new') }}">New contact</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="uk-overflow-auto uk-margin">
+      <table class="uk-table uk-table-divider uk-table-small">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Company</th>
+            <th>Created</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in contacts %}
+            <tr>
+              <td>{{ c.name }}</td>
+              <td>{{ c.email or '' }}</td>
+              <td>{{ c.phone or '' }}</td>
+              <td>{{ c.company or '' }}</td>
+              <td class="uk-text-nowrap">{{ c.created_at }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endblock %}
+

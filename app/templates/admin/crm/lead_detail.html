@@ -1,0 +1,97 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Lead {{ lead.id }}{% endblock %}
+{% block page_title %}Lead #{{ lead.id }}{% endblock %}
+
+{% block content %}
+  <div class="uk-grid-large" uk-grid>
+    <div class="uk-width-1-1 uk-width-2-3@l">
+      <div class="uk-card uk-card-default uk-card-body">
+        <div class="uk-flex uk-flex-between uk-flex-middle uk-flex-wrap">
+          <div>
+            <h3 class="uk-card-title uk-margin-remove">{{ contact.name if contact else 'Contact' }}</h3>
+            <div class="uk-text-meta">
+              Stage: <span class="uk-label">{{ lead.stage }}</span>
+              {% if lead.source %} · Source: {{ lead.source }}{% endif %}
+              {% if lead.value %} · Value: {{ lead.value }}{% endif %}
+            </div>
+          </div>
+          <form method="post" action="{{ url_for('crm.lead_set_stage', lead_id=lead.id) }}" class="uk-flex uk-flex-middle uk-grid-small" uk-grid>
+            {{ csrf_token() }}
+            <div>
+              <select class="uk-select uk-form-small" name="stage">
+                {% for s in stages %}
+                  <option value="{{ s }}" {{ (lead.stage==s) and 'selected' or '' }}>{{ s }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div>
+              <button class="uk-button uk-button-primary uk-button-small" type="submit">Update stage</button>
+            </div>
+          </form>
+        </div>
+
+        <hr>
+
+        <h4>Notes</h4>
+        <form method="post" action="{{ url_for('crm.lead_add_note', lead_id=lead.id) }}">
+          {{ csrf_token() }}
+          <textarea class="uk-textarea" name="body" rows="3" placeholder="Add a note..."></textarea>
+          <div class="uk-margin-small-top">
+            <button class="uk-button uk-button-default uk-button-small" type="submit">Add note</button>
+          </div>
+        </form>
+
+        <div class="uk-margin">
+          {% for n in notes %}
+            <div class="uk-card uk-card-small uk-card-default uk-card-body uk-margin-small">
+              <div class="uk-text-meta">{{ n.created_at }}</div>
+              <div class="uk-margin-small-top">{{ n.body }}</div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="uk-width-1-1 uk-width-1-3@l">
+      <div class="uk-card uk-card-default uk-card-body">
+        <h4 class="uk-margin-remove-top">Tasks</h4>
+        <form method="post" action="{{ url_for('crm.lead_add_task', lead_id=lead.id) }}">
+          {{ csrf_token() }}
+          <input class="uk-input uk-form-small" name="title" placeholder="Task title" required>
+          <div class="uk-grid-small uk-margin-small-top" uk-grid>
+            <div class="uk-width-expand">
+              <select class="uk-select uk-form-small" name="assigned_to_id">
+                <option value="">Unassigned</option>
+                {% for u in users %}
+                  <option value="{{ u.id }}">{{ u.email }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="uk-width-auto">
+              <button class="uk-button uk-button-primary uk-button-small" type="submit">Add</button>
+            </div>
+          </div>
+        </form>
+
+        <div class="uk-margin">
+          {% for t in tasks %}
+            <div class="uk-flex uk-flex-between uk-flex-middle uk-card uk-card-small uk-card-default uk-card-body uk-margin-small">
+              <div>
+                <div class="uk-text-bold">{{ t.title }}</div>
+                <div class="uk-text-meta">{{ t.status }}</div>
+              </div>
+              <form method="post" action="{{ url_for('crm.task_toggle', task_id=t.id) }}">
+                {{ csrf_token() }}
+                <button class="uk-button uk-button-default uk-button-small" type="submit">
+                  {{ 'Reopen' if t.status==TaskStatus.DONE.value else 'Done' }}
+                </button>
+              </form>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+

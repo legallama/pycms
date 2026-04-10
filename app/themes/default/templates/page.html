@@ -1,0 +1,21 @@
+{# 
+  This template is used as the content source for layouts.
+  The actual layout (default, full-width, etc.) is selected in the page editor.
+#}
+{% extends active_layout if active_layout is defined else "default/templates/layouts/default.html" %}
+
+{% block title %}{{ page.title }}{% endblock %}
+
+{% block content %}
+  <article class="uk-article">
+    <h1 class="uk-article-title">{{ page.title }}</h1>
+    <div class="uk-article-meta uk-margin-small-bottom">
+      {% if page.published_at %}
+        Last updated: {{ page.updated_at.strftime('%B %d, %Y') }}
+      {% endif %}
+    </div>
+    <div class="uk-margin-large-top tm-content-body">
+      {{ page.body_html | safe }}
+    </div>
+  </article>
+{% endblock %}

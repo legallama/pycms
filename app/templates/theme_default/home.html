@@ -1,0 +1,28 @@
+{% extends "theme_default/base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+  <div class="uk-grid-large uk-child-width-1-2@m uk-flex-middle" uk-grid>
+    <div>
+      <h1 class="uk-heading-medium">A Flask CMS + CRM</h1>
+      <p class="uk-text-lead">Public theme uses UIkit default styling. Admin uses UIkit everywhere.</p>
+      <div class="uk-margin">
+        <a class="uk-button uk-button-primary" href="/admin/">Go to Admin</a>
+      </div>
+    </div>
+    <div>
+      <div class="uk-card uk-card-default uk-card-body">
+        <h3 class="uk-card-title">What’s next</h3>
+        <ul class="uk-list uk-list-bullet">
+          <li>Pages + posts editor & publishing</li>
+          <li>Media manager</li>
+          <li>Menus + module positions</li>
+          <li>CRM pipeline</li>
+          <li>Extensions system</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+

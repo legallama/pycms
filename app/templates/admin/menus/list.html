@@ -1,0 +1,43 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Menus{% endblock %}
+{% block page_title %}Menus{% endblock %}
+
+{% block content %}
+  <div class="uk-card uk-card-default uk-card-body">
+    <div class="uk-flex uk-flex-between uk-flex-middle">
+      <h3 class="uk-card-title uk-margin-remove">Menus</h3>
+      <a class="uk-button uk-button-primary uk-button-small" href="{{ url_for('site.menus_new') }}">New menu</a>
+    </div>
+
+    <div class="uk-overflow-auto uk-margin">
+      <table class="uk-table uk-table-divider uk-table-small">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for m in menus %}
+            <tr>
+              <td class="uk-text-nowrap">{{ m.name }}</td>
+              <td class="uk-text-nowrap">
+                <a class="uk-button uk-button-default uk-button-small" href="{{ url_for('site.menus_edit', menu_id=m.id) }}">Edit</a>
+                {% if m.name != 'main' %}
+                 <form action="{{ url_for('site.menus_delete', menu_id=m.id) }}" method="post" style="display:inline;" onsubmit="return confirm('Delete this menu?');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <button type="submit" class="uk-button uk-button-danger uk-button-small" title="Delete Menu">
+                        <span uk-icon="trash"></span>
+                    </button>
+                </form>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endblock %}
+

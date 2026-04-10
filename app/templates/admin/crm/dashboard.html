@@ -1,0 +1,41 @@
+{% extends "admin/base.html" %}
+
+{% block title %}CRM{% endblock %}
+{% block page_title %}CRM pipeline{% endblock %}
+
+{% block content %}
+  <div class="uk-grid-small uk-child-width-1-3@m" uk-grid>
+    <div><div class="uk-card uk-card-default uk-card-body"><div class="uk-text-meta">Contacts</div><div class="uk-text-large uk-text-bold">{{ contacts_count }}</div></div></div>
+    <div><div class="uk-card uk-card-default uk-card-body"><div class="uk-text-meta">Leads</div><div class="uk-text-large uk-text-bold">{{ leads_count }}</div></div></div>
+    <div>
+      <div class="uk-card uk-card-default uk-card-body">
+        <div class="uk-text-meta">Actions</div>
+        <div class="uk-margin-small-top">
+          <a class="uk-button uk-button-primary uk-button-small" href="{{ url_for('crm.leads_new') }}">New lead</a>
+          <a class="uk-button uk-button-default uk-button-small" href="{{ url_for('crm.contacts_new') }}">New contact</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="uk-margin-large-top uk-overflow-auto">
+    <div class="uk-flex uk-flex-nowrap uk-grid-small" uk-grid style="min-width: 1100px;">
+      {% for stage in stages %}
+        <div class="uk-width-1-6">
+          <div class="uk-card uk-card-default uk-card-body">
+            <div class="uk-text-bold uk-text-capitalize">{{ stage }}</div>
+            <div class="uk-margin-small-top">
+              {% for lead in by_stage.get(stage, []) %}
+                <a class="uk-card uk-card-small uk-card-body uk-display-block uk-card-hover uk-margin-small" href="{{ url_for('crm.lead_detail', lead_id=lead.id) }}">
+                  <div class="uk-text-small uk-text-muted">Lead #{{ lead.id }}</div>
+                  <div class="uk-text-bold">Contact {{ lead.contact_id }}</div>
+                </a>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+{% endblock %}
+

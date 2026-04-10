@@ -1,0 +1,97 @@
+/* ─── Position Styling ─── */
+.tm-position-topbar {
+    padding: 0px;
+    margin-bottom: 0 !important;
+    font-size: 0.8rem;
+    border-bottom: 1px solid #eee;
+}
+
+.tm-position-header {
+    border-bottom: 1px solid #eee;
+}
+
+.tm-position-bottom {
+    padding: 8px 0;
+    background: #222;
+    color: #aaa;
+    font-size: 0.75rem;
+}
+
+/* ─── Module Block ─── */
+.module-block {
+    margin-bottom: 0px;
+}
+
+.module-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    border-bottom: 2px solid #6366f1;
+    display: inline-block;
+    margin-bottom: 15px;
+}
+
+/* ─── Sidebar ─── */
+aside .uk-card {
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+/* ─── Position Preview Mode ─── */
+.tm-position-preview {
+    position: relative;
+    box-sizing: border-box;
+    transition: all 0.2s ease;
+}
+
+.tm-position-preview-label {
+    position: absolute;
+    top: 0;
+    left: 0;
+    background: #6366f1;
+    color: #fff;
+    padding: 2px 8px;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
+    z-index: 1000;
+    border-bottom-right-radius: 4px;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.tm-position-preview-active {
+    outline: 2px dashed #6366f1;
+    outline-offset: -2px;
+    background: rgba(99, 102, 241, 0.03);
+    min-height: 40px;
+}
+
+.tm-position-preview-empty {
+    outline: 2px dashed #9ca3af;
+    outline-offset: -2px;
+    min-height: 60px;
+    min-width: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(243, 244, 246, 0.7);
+}
+
+.tm-position-preview-empty::after {
+    content: "Empty Position";
+    color: #9ca3af;
+    font-size: 12px;
+    font-style: italic;
+}
+
+.tm-position-preview:hover {
+    outline-color: #4f46e5;
+    background: rgba(99, 102, 241, 0.08);
+}
+
+/* ─── Navbar Dropdown Fixes ─── */
+.uk-navbar-dropdown {
+    top: 100% !important;
+    margin-top: 0 !important;
+    padding: 20px !important;
+}

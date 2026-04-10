@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>{% block title %}Admin{% endblock %} | pycms</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/uikit@3.21.12/dist/css/uikit.min.css" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='admin/css/admin.css') }}" />
+  <script defer src="https://cdn.jsdelivr.net/npm/uikit@3.21.12/dist/js/uikit.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/uikit@3.21.12/dist/js/uikit-icons.min.js"></script>
+  <!-- Apply saved theme instantly to prevent flash -->
+  <script>
+    (function() {
+      var t = localStorage.getItem('pycms-theme') || 'light';
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
+  {% block head %}{% endblock %}
+</head>
+
+<body>
+  <div class="uk-flex uk-height-viewport">
+    <!-- Sidebar -->
+    <aside class="uk-visible@m admin-sidebar" style="width: 280px; z-index: 1000;">
+      <div class="sidebar-logo uk-flex uk-flex-middle">
+        <span class="uk-margin-small-right" uk-icon="icon: rocket; ratio: 1.2" style="color: var(--primary)"></span>
+        <div class="sidebar-logo-text">pycms</div>
+      </div>
+
+      <ul class="uk-nav uk-nav-default">
+        <li class="{{ 'uk-active' if request.endpoint == 'admin.dashboard' else '' }}">
+          <a href="{{ url_for('admin.dashboard') }}">
+            <span class="uk-margin-small-right" uk-icon="home"></span> Dashboard
+          </a>
+        </li>
+
+        <li class="uk-nav-header">Content</li>
+        <li class="{{ 'uk-active' if request.endpoint and 'cms.pages' in request.endpoint else '' }}">
+          <a href="{{ url_for('cms.pages_list') }}">
+            <span class="uk-margin-small-right" uk-icon="copy"></span> Pages
+          </a>
+        </li>
+        <li class="{{ 'uk-active' if request.endpoint and 'cms.posts' in request.endpoint else '' }}">
+          <a href="{{ url_for('cms.posts_list') }}">
+            <span class="uk-margin-small-right" uk-icon="file-edit"></span> Posts
+          </a>
+        </li>
+        <li class="{{ 'uk-active' if request.endpoint and 'media.media' in request.endpoint else '' }}">
+          <a href="{{ url_for('media.media_list') }}">
+            <span class="uk-margin-small-right" uk-icon="image"></span> Media
+          </a>
+        </li>
+
+        <li class="uk-nav-header">CRM</li>
+        <li class="{{ 'uk-active' if request.endpoint and 'crm.crm_dashboard' in request.endpoint else '' }}">
+          <a href="{{ url_for('crm.crm_dashboard') }}">
+            <span class="uk-margin-small-right" uk-icon="bolt"></span> Pipeline
+          </a>
+        </li>
+        <li class="{{ 'uk-active' if request.endpoint and 'crm.contacts' in request.endpoint else '' }}">
+          <a href="{{ url_for('crm.contacts_list') }}">
+            <span class="uk-margin-small-right" uk-icon="users"></span> Contacts
+          </a>
+        </li>
+
+        <li class="uk-nav-header">Site</li>
+        <li class="{{ 'uk-active' if request.endpoint and 'site.menus' in request.endpoint else '' }}">
+          <a href="{{ url_for('site.menus_list') }}">
+            <span class="uk-margin-small-right" uk-icon="menu"></span> Menus
+          </a>
+        </li>
+        <li class="{{ 'uk-active' if request.endpoint and 'modules.modules' in request.endpoint else '' }}">
+          <a href="{{ url_for('modules.modules_list') }}">
+            <span class="uk-margin-small-right" uk-icon="grid"></span> Modules
+          </a>
+        </li>
+
+        <li class="uk-nav-header">System</li>
+        <li class="{{ 'uk-active' if request.endpoint and 'admin.users' in request.endpoint else '' }}">
+          <a href="{{ url_for('admin.users_list') }}">
+            <span class="uk-margin-small-right" uk-icon="users"></span> Users
+          </a>
+        </li>
+        <li class="{{ 'uk-active' if request.endpoint and 'site.themes' in request.endpoint else '' }}">
+          <a href="{{ url_for('site.themes_list') }}">
+            <span class="uk-margin-small-right" uk-icon="paint-bucket"></span> Themes
+          </a>
+        </li>
+        <li>
+          <a href="/" target="_blank">
+            <span class="uk-margin-small-right" uk-icon="link"></span> View Site
+          </a>
+        </li>
+      </ul>
+    </aside>
+
+    <!-- Main Section -->
+    <main class="uk-width-expand uk-flex uk-flex-column">
+      <!-- Navbar -->
+      <nav class="uk-navbar-container admin-navbar" uk-navbar>
+        <div class="uk-navbar-left uk-padding-small">
+          <a class="uk-navbar-toggle uk-hidden@m" href="#admin-offcanvas" uk-toggle>
+            <span uk-navbar-toggle-icon></span>
+          </a>
+          <div class="uk-navbar-item">
+            <h1 class="uk-h4 uk-margin-remove uk-text-bold">{% block page_title %}{% endblock %}</h1>
+          </div>
+        </div>
+        <div class="uk-navbar-right uk-padding-small">
+          <!-- Theme Toggle -->
+          <div class="uk-navbar-item">
+            <label class="theme-toggle" id="theme-toggle" title="Toggle light/dark mode">
+              <span class="theme-toggle-icon icon-sun" uk-icon="icon: sun; ratio: 0.8"></span>
+              <div class="theme-toggle-track"></div>
+              <span class="theme-toggle-icon icon-moon" uk-icon="icon: moon; ratio: 0.8"></span>
+            </label>
+          </div>
+
+          {% if current_user.is_authenticated %}
+          <div class="uk-navbar-item uk-visible@s">
+            <span class="uk-text-meta uk-margin-small-right">Logged in as</span>
+            <span class="uk-text-bold">{{ current_user.email }}</span>
+          </div>
+          <div class="uk-navbar-item">
+            <form method="post" action="{{ url_for('admin.logout') }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+              <button class="uk-button uk-button-default uk-button-small" type="submit">Log out</button>
+            </form>
+          </div>
+          {% endif %}
+        </div>
+      </nav>
+
+      <!-- Content -->
+      <div class="uk-width-expand uk-overflow-auto main-content fade-in">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="uk-alert-{{ 'danger' if category == 'danger' else category }}" uk-alert>
+          <a class="uk-alert-close" uk-close></a>
+          <p>{{ message }}</p>
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+      </div>
+    </main>
+  </div>
+
+  <!-- Mobile Offcanvas -->
+  <div id="admin-offcanvas" uk-offcanvas="overlay: true">
+    <div class="uk-offcanvas-bar admin-sidebar">
+      <button class="uk-offcanvas-close" type="button" uk-close></button>
+      <div class="sidebar-logo uk-flex uk-flex-middle">
+        <div class="sidebar-logo-text">pycms</div>
+      </div>
+      <ul class="uk-nav uk-nav-default">
+        <!-- Same links as desktop sidebar -->
+        <li><a href="{{ url_for('admin.dashboard') }}"><span uk-icon="home"></span> Dashboard</a></li>
+        <li class="uk-nav-header">Content</li>
+        <li><a href="{{ url_for('cms.pages_list') }}"><span uk-icon="copy"></span> Pages</a></li>
+        <li><a href="{{ url_for('cms.posts_list') }}"><span uk-icon="file-edit"></span> Posts</a></li>
+        <li><a href="{{ url_for('media.media_list') }}"><span uk-icon="image"></span> Media</a></li>
+        <li class="uk-nav-header">CRM</li>
+        <li><a href="{{ url_for('crm.crm_dashboard') }}"><span uk-icon="bolt"></span> Pipeline</a></li>
+        <li><a href="{{ url_for('crm.contacts_list') }}"><span uk-icon="users"></span> Contacts</a></li>
+        <li class="uk-nav-header">Site</li>
+        <li><a href="{{ url_for('site.menus_list') }}"><span uk-icon="menu"></span> Menus</a></li>
+        <li><a href="{{ url_for('modules.modules_list') }}"><span uk-icon="grid"></span> Modules</a></li>
+        <li class="uk-nav-header">System</li>
+        <li><a href="{{ url_for('admin.users_list') }}"><span uk-icon="cog"></span> Users</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Theme Toggle Script -->
+  <script>
+    (function() {
+      var toggle = document.getElementById('theme-toggle');
+      if (!toggle) return;
+
+      toggle.addEventListener('click', function() {
+        var html = document.documentElement;
+        var current = html.getAttribute('data-theme') || 'light';
+        var next = current === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('pycms-theme', next);
+      });
+    })();
+  </script>
+  {% block scripts %}{% endblock %}
+</body>
+
+</html>

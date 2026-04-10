@@ -1,0 +1,103 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+  <div class="uk-grid-medium uk-child-width-1-2@m uk-child-width-1-4@l" uk-grid>
+    <div>
+      <div class="uk-card uk-card-default uk-card-body">
+        <div class="uk-flex uk-flex-between uk-flex-middle">
+          <div>
+            <div class="uk-text-meta uk-text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.08em;">Content</div>
+            <div class="uk-text-large uk-text-bold uk-margin-small-top">Pages</div>
+          </div>
+          <div class="uk-icon-button stat-icon" uk-icon="copy"></div>
+        </div>
+        <div class="uk-margin-small-top">
+           <span class="uk-label uk-label-success">Active</span>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="uk-card uk-card-default uk-card-body">
+         <div class="uk-flex uk-flex-between uk-flex-middle">
+          <div>
+            <div class="uk-text-meta uk-text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.08em;">Content</div>
+            <div class="uk-text-large uk-text-bold uk-margin-small-top">Posts</div>
+          </div>
+          <div class="uk-icon-button stat-icon" uk-icon="file-edit"></div>
+        </div>
+        <div class="uk-margin-small-top">
+           <span class="uk-label uk-label-success">Active</span>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="uk-card uk-card-default uk-card-body">
+         <div class="uk-flex uk-flex-between uk-flex-middle">
+          <div>
+            <div class="uk-text-meta uk-text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.08em;">CRM</div>
+            <div class="uk-text-large uk-text-bold uk-margin-small-top">Leads</div>
+          </div>
+          <div class="uk-icon-button stat-icon" uk-icon="bolt"></div>
+        </div>
+        <div class="uk-margin-small-top">
+           <span class="uk-label uk-label-warning">Coming Soon</span>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="uk-card uk-card-default uk-card-body">
+         <div class="uk-flex uk-flex-between uk-flex-middle">
+          <div>
+            <div class="uk-text-meta uk-text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.08em;">System</div>
+            <div class="uk-text-large uk-text-bold uk-margin-small-top">Users</div>
+          </div>
+          <div class="uk-icon-button stat-icon" uk-icon="cog"></div>
+        </div>
+        <div class="uk-margin-small-top">
+           <span class="uk-label uk-label-success">Active</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="uk-margin-large-top">
+    <div class="uk-card uk-card-default uk-card-body">
+        <div class="uk-grid-large uk-child-width-1-2@m" uk-grid>
+            <div>
+                <h3 class="uk-text-bold">Welcome to your Dashboard</h3>
+                <p class="uk-text-muted">The core management system for your site. Use the sidebar to navigate between content, CRM leads, and system settings.</p>
+                <div class="uk-margin-medium-top uk-grid-small uk-child-width-auto" uk-grid>
+                    <div>
+                        <a href="{{ url_for('cms.pages_new') }}" class="uk-button uk-button-primary">Create New Page</a>
+                    </div>
+                    <div>
+                        <a href="{{ url_for('cms.posts_new') }}" class="uk-button uk-button-default">Write a Post</a>
+                    </div>
+                </div>
+            </div>
+            <div class="uk-visible@m">
+                <div class="status-panel uk-padding">
+                    <h4 class="uk-text-bold uk-margin-small-bottom">System Status</h4>
+                    <ul class="uk-list uk-list-divider uk-text-small">
+                        <li class="uk-flex uk-flex-between">
+                            <span>Database</span>
+                            <span class="uk-text-success">Connected</span>
+                        </li>
+                        <li class="uk-flex uk-flex-between">
+                            <span>Storage</span>
+                            <span class="uk-text-success">Local OK</span>
+                        </li>
+                        <li class="uk-flex uk-flex-between">
+                            <span>Environment</span>
+                            <span class="uk-text-muted">Development</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+  </div>
+{% endblock %}

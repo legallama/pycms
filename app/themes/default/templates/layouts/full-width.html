@@ -1,0 +1,8 @@
+{# Full Width Layout: No sidebar, content takes full width #}
+{% extends "default/templates/base.html" %}
+
+{% block main_content %}
+  <div class="uk-width-1-1">
+    {% block content %}{% endblock %}
+  </div>
+{% endblock %}

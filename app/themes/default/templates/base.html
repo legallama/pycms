@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>{% block title %}Home{% endblock %} | pycms</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/uikit@3.21.12/dist/css/uikit.min.css" />
+  <link rel="stylesheet" href="/static/theme/css/theme.css" />
+  <script defer src="https://cdn.jsdelivr.net/npm/uikit@3.21.12/dist/js/uikit.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/uikit@3.21.12/dist/js/uikit-icons.min.js"></script>
+  {% block head %}{% endblock %}
+</head>
+
+<body>
+  {# ─── Top Bar Position ─── #}
+  {% set top_bar_html = render_position("top-bar") %}
+  {% if top_bar_html %}
+  <div class="tm-position-topbar">
+    <div class="{{ 'uk-container' if theme_config.position_widths['top-bar'] != 'full' else 'uk-padding-small' }}">
+      {{ top_bar_html }}
+    </div>
+  </div>
+  {% endif %}
+
+  {# ─── Navigation ─── #}
+
+  <div uk-sticky="sel-target: .uk-navbar-container; cls-active: uk-navbar-sticky">
+    <nav class="uk-navbar-container">
+      <div class="{{ 'uk-container' if theme_config.position_widths['navbar'] != 'full' else '' }}">
+        <div uk-navbar>
+          <div class="uk-navbar-left">
+            <a class="uk-navbar-item uk-logo" href="/">pycms</a>
+          </div>
+          <div class="uk-navbar-right">
+            {% set default_menu_html %}
+            <ul class="uk-navbar-nav uk-visible@m">
+              {% for item in (main_menu_items or []) %}
+              <li class="{{ 'uk-parent' if item.children else '' }}">
+                <a href="{{ item.href }}">
+                  {% if item.icon %}<span uk-icon="{{ item.icon }}" class="uk-margin-small-right"></span>{% endif %}
+                  {{ item.label }}
+                </a>
+                {% if item.children %}
+                <div class="uk-navbar-dropdown" uk-drop="offset: 0; pos: bottom-center; boundary: !nav; flip: x;">
+                  <ul class="uk-nav uk-navbar-dropdown-nav">
+                    {% for child in item.children %}
+                    <li><a href="{{ child.href }}">
+                        {% if child.icon %}<span uk-icon="{{ child.icon }}" class="uk-margin-small-right"></span>{% endif %}
+                        {{ child.label }}
+                    </a></li>
+                    {% endfor %}
+                  </ul>
+                </div>
+                {% endif %}
+              </li>
+              {% endfor %}
+            </ul>
+            {% endset %}
+
+            {% set navbar_html = render_position("navbar", default_menu_html) %}
+
+            {% if navbar_html %}
+            {{ navbar_html | safe }}
+            {% else %}
+            {{ default_menu_html | safe }}
+            {% endif %}
+
+            <a class="uk-navbar-toggle uk-hidden@m" uk-navbar-toggle-icon href="#mobile-nav" uk-toggle></a>
+          </div>
+        </div>
+      </div>
+    </nav>
+  </div>
+
+
+  {# ─── Header Position ─── #}
+  {% set header_html = render_position("header") %}
+  {% if header_html %}
+  <div class="">
+    <div class="{{ 'uk-container' if theme_config.position_widths['header'] != 'full' else 'uk-cover' }}">
+      {{ header_html }}
+    </div>
+  </div>
+  {% endif %}
+
+  {# ─── Content Top Position ─── #}
+  {% set content_top_html = render_position("content-top") %}
+  {% if content_top_html %}
+  <div class="tm-position-content-top uk-section uk-section-small uk-padding-remove-bottom">
+    <div class="{{ 'uk-container' if theme_config.position_widths['content-top'] != 'full' else 'uk-padding-small' }}">
+      {{ content_top_html }}
+    </div>
+  </div>
+  {% endif %}
+
+  {# ─── Main Content Area ─── #}
+  <main class="uk-section">
+    <div class="uk-container">
+      {% block main_content %}
+      <div class="uk-grid-large" uk-grid>
+        <div class="uk-width-expand">
+          {% block content %}{% endblock %}
+        </div>
+        {% set sidebar_html = render_position("sidebar") %}
+        {% if sidebar_html %}
+        <aside class="uk-width-1-3@l">
+          {{ sidebar_html }}
+        </aside>
+        {% endif %}
+      </div>
+      {% endblock %}
+    </div>
+  </main>
+
+  {# ─── Content Bottom Position ─── #}
+  {% set content_bottom_html = render_position("content-bottom") %}
+  {% if content_bottom_html %}
+  <div class="tm-position-content-bottom uk-section uk-section-small">
+    <div
+      class="{{ 'uk-container' if theme_config.position_widths['content-bottom'] != 'full' else 'uk-padding-small' }}">
+      {{ content_bottom_html }}
+    </div>
+  </div>
+  {% endif %}
+
+  {# ─── Footer Top Position ─── #}
+  {% set footer_top_html = render_position("footer-top") %}
+  {% if footer_top_html %}
+  <div class="tm-position-footer-top uk-section uk-section-secondary uk-section-small uk-light">
+    <div class="{{ 'uk-container' if theme_config.position_widths['footer-top'] != 'full' else 'uk-padding-small' }}">
+      {{ footer_top_html }}
+    </div>
+  </div>
+  {% endif %}
+
+  {# ─── Footer Position ─── #}
+  {% set footer_html = render_position("footer") %}
+  <footer class="uk-section uk-section-small uk-section-muted">
+    <div class="{{ 'uk-container' if theme_config.position_widths['footer'] != 'full' else 'uk-padding-small' }}">
+      {% if footer_html %}
+      {{ footer_html }}
+      {% else %}
+      <div class="uk-text-small uk-text-muted">Powered by pycms</div>
+      {% endif %}
+    </div>
+  </footer>
+
+  {# ─── Bottom Position ─── #}
+  {% set bottom_html = render_position("bottom") %}
+  {% if bottom_html %}
+  <div class="tm-position-bottom">
+    <div class="{{ 'uk-container' if theme_config.position_widths['bottom'] != 'full' else 'uk-padding-small' }}">
+      {{ bottom_html }}
+    </div>
+  </div>
+  {% endif %}
+
+  {# ─── Mobile Nav Offcanvas ─── #}
+  <div id="mobile-nav" uk-offcanvas="overlay: true">
+    <div class="uk-offcanvas-bar">
+      <button class="uk-offcanvas-close" type="button" uk-close></button>
+      <div class="uk-margin-top">
+        {% set mobile_nav_html = render_position("mobile-nav") %}
+        {% if mobile_nav_html %}
+        {{ mobile_nav_html }}
+        {% else %}
+        <ul class="uk-nav uk-nav-default" uk-nav>
+          {% for item in (main_menu_items or []) %}
+          <li class="{{ 'uk-parent' if item.children else '' }}">
+            <a href="{{ item.href }}">
+              {% if item.icon %}<span uk-icon="{{ item.icon }}" class="uk-margin-small-right"></span>{% endif %}
+              {{ item.label }}
+            </a>
+            {% if item.children %}
+            <ul class="uk-nav-sub">
+              {% for child in item.children %}
+              <li>
+                <a href="{{ child.href }}">
+                  {% if child.icon %}<span uk-icon="{{ child.icon }}" class="uk-margin-small-right"></span>{% endif %}
+                  {{ child.label }}
+                </a>
+              </li>
+              {% endfor %}
+            </ul>
+            {% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>

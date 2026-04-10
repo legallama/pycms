@@ -1,0 +1,61 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Posts{% endblock %}
+{% block page_title %}Posts{% endblock %}
+
+{% block content %}
+  <div class="uk-card uk-card-default uk-card-body">
+    <div class="uk-flex uk-flex-between uk-flex-middle uk-flex-wrap">
+      <h3 class="uk-card-title uk-margin-remove">Posts</h3>
+      <div class="uk-flex uk-flex-middle uk-flex-wrap uk-grid-small" uk-grid>
+        <div>
+          <form class="uk-inline" method="get">
+            <input class="uk-input uk-form-small" type="text" name="q" placeholder="Search title" value="{{ q or '' }}">
+            {% if status %}<input type="hidden" name="status" value="{{ status }}">{% endif %}
+          </form>
+        </div>
+        <div>
+          <form method="get">
+            {% if q %}<input type="hidden" name="q" value="{{ q }}">{% endif %}
+            <select class="uk-select uk-form-small" name="status" onchange="this.form.submit()">
+              <option value="" {{ '' == (status or '') and 'selected' or '' }}>All</option>
+              <option value="draft" {{ 'draft' == (status or '') and 'selected' or '' }}>Draft</option>
+              <option value="published" {{ 'published' == (status or '') and 'selected' or '' }}>Published</option>
+            </select>
+          </form>
+        </div>
+        <div>
+          <a class="uk-button uk-button-primary uk-button-small" href="{{ url_for('cms.posts_new') }}">New post</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="uk-overflow-auto uk-margin">
+      <table class="uk-table uk-table-divider uk-table-small">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Slug</th>
+            <th>Status</th>
+            <th>Updated</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in posts %}
+            <tr>
+              <td>{{ p.title }}</td>
+              <td class="uk-text-nowrap"><code>/blog/{{ p.slug }}</code></td>
+              <td><span class="uk-label">{{ p.status }}</span></td>
+              <td class="uk-text-nowrap">{{ p.updated_at }}</td>
+              <td class="uk-text-nowrap">
+                <a class="uk-button uk-button-default uk-button-small" href="{{ url_for('cms.posts_edit', post_id=p.id) }}">Edit</a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endblock %}
+

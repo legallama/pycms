@@ -1,0 +1,32 @@
+{
+  "name": "Default",
+  "author": "pycms",
+  "version": "1.0",
+  "description": "Clean UIkit-based default theme",
+  "positions": {
+    "top-bar": "Top Bar (above navigation)",
+    "navbar": "Main Navigation",
+    "header": "Header (below navigation)",
+    "content-top": "Content Top",
+    "sidebar": "Sidebar",
+    "content-bottom": "Content Bottom",
+    "footer-top": "Footer Top",
+    "footer": "Footer",
+    "bottom": "Bottom (after footer)",
+    "mobile-nav": "Mobile Navigation (Offcanvas)"
+  },
+  "layouts": {
+    "default": {
+      "label": "Default (Content + Sidebar)",
+      "template": "layouts/default.html"
+    },
+    "full-width": {
+      "label": "Full Width (No Sidebar)",
+      "template": "layouts/full-width.html"
+    },
+    "sidebar-left": {
+      "label": "Sidebar Left",
+      "template": "layouts/sidebar-left.html"
+    }
+  }
+}

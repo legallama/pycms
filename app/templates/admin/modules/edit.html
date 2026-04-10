@@ -1,0 +1,391 @@
+{% extends "admin/base.html" %}
+
+{% block title %}{{ "Edit module" if module else "New module" }}{% endblock %}
+{% block page_title %}{{ "Edit module" if module else "New module" }}{% endblock %}
+
+{% block content %}
+  <div class="uk-card uk-card-default uk-card-body">
+    <h3 class="uk-card-title">{{ 'Edit Module' if module else 'New Module' }}</h3>
+    <form method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+        <ul class="uk-tab uk-margin-medium-bottom" uk-tab="{connect:'#module-editor-tabs'}">
+            <li><a href="#">Settings</a></li>
+            <li><a href="#">Menu Assignment</a></li>
+        </ul>
+
+        <ul id="module-editor-tabs" class="uk-switcher">
+            <!-- TAB 1: SETTINGS -->
+            <li>
+                <div class="uk-margin">
+                    <label class="uk-form-label uk-text-bold">Module Title</label>
+                    <div class="uk-form-controls">
+                        <input class="uk-input" type="text" name="title" value="{{ module.title if module else '' }}" required placeholder="e.g. Main Sidebar">
+                    </div>
+                    <div class="uk-margin-small-top">
+                        <label><input class="uk-checkbox" type="checkbox" name="show_title" {{ 'checked' if (module.show_title if module else True) else '' }}> Show Title</label>
+                    </div>
+                </div>
+
+                <div class="uk-grid-small" uk-grid>
+                    <div class="uk-width-1-2@s">
+                        <label class="uk-form-label uk-text-bold">Position</label>
+                        <div class="uk-form-controls">
+                            <select class="uk-select" name="position">
+                                {% for pos, label in (positions or {}).items() %}
+                                    <option value="{{ pos }}" {{ 'selected' if (module and module.position == pos) else '' }}>{{ label }} ({{ pos }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="uk-width-1-2@s">
+                        <label class="uk-form-label uk-text-bold">Module Type</label>
+                        <div class="uk-form-controls">
+                            <select class="uk-select" name="type" id="module-type">
+                                {% for type_id, type_label in module_types %}
+                                    <option value="{{ type_id }}" {{ 'selected' if (module and module.type == type_id) else '' }}>{{ type_label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="uk-margin">
+                    <label class="uk-form-label uk-text-bold">Status</label>
+                    <div class="uk-form-controls">
+                        <label><input class="uk-checkbox" type="checkbox" name="enabled" {{ 'checked' if (module.enabled if module else True) else '' }}> Enabled</label>
+                    </div>
+                </div>
+
+                <div class="uk-margin">
+                    <label class="uk-form-label uk-text-bold">Custom CSS Class</label>
+                    <div class="uk-form-controls">
+                        <input class="uk-input" type="text" name="css_class" value="{{ module.css_class if module else '' }}" placeholder="optional classes">
+                    </div>
+                </div>
+
+                <hr>
+
+                {# ─── Module-Specific Config ─── #}
+                <div id="config-sections">
+                    <!-- HTML Config -->
+                    <div class="module-config" data-type="html">
+                        <label class="uk-form-label uk-text-bold">Custom HTML Content</label>
+                        <textarea class="uk-textarea" name="html" rows="8">{{ config.get('html', '') if config else '' }}</textarea>
+                        <p class="uk-text-meta">Jinja syntax is allowed.</p>
+                    </div>
+
+                    <!-- Text Config -->
+                    <div class="module-config uk-hidden" data-type="text">
+                        <label class="uk-form-label uk-text-bold">Plain Text</label>
+                        <textarea class="uk-textarea" name="text" rows="4">{{ config.get('text', '') if config else '' }}</textarea>
+                    </div>
+
+                    <!-- Menu Config -->
+                    <div class="module-config uk-hidden" data-type="menu">
+                        <div class="uk-margin small">
+                            <label class="uk-form-label uk-text-bold">Select Menu</label>
+                            <select class="uk-select" name="menu_name">
+                                {% for mn in menus %}
+                                <option value="{{ mn.name }}" {{ 'selected' if (config and config.get('menu_name') == mn.name) or (not config and mn.name == 'main') else '' }}>{{ mn.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="uk-margin small">
+                            <label class="uk-form-label uk-text-bold">Dropdown Width</label>
+                            <select class="uk-select" name="dropdown_width">
+                                <option value="standard" {{ 'selected' if not config or config.get('dropdown_width') == 'standard' else '' }}>Standard (200px)</option>
+                                <option value="large" {{ 'selected' if config and config.get('dropdown_width') == 'large' else '' }}>Large (300px)</option>
+                                <option value="xlarge" {{ 'selected' if config and config.get('dropdown_width') == 'xlarge' else '' }}>Extra Large (400px)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Recent Posts Config -->
+                    <div class="module-config uk-hidden" data-type="recent_posts">
+                        <label class="uk-form-label uk-text-bold">Number of Posts</label>
+                        <input class="uk-input" type="number" name="count" value="{{ config.get('count', 5) if config else 5 }}" min="1" max="20">
+                    </div>
+                    
+                    <!-- Search Config -->
+                    <div class="module-config uk-hidden" data-type="search">
+                        <p class="uk-text-meta">Simple site search input.</p>
+                    </div>
+
+                    <!-- Hero Config -->
+                    <div class="module-config uk-hidden" data-type="hero">
+                        <div class="uk-margin">
+                            <label class="uk-form-label uk-text-bold">Background Image</label>
+                            <div class="uk-flex">
+                                <input class="uk-input" type="text" name="image_url" id="hero-image-url" value="{{ config.get('image_url', '') if config else '' }}" placeholder="https://...">
+                                <button type="button" class="uk-button uk-button-default" onclick="openMediaPicker()">Browse</button>
+                            </div>
+                        </div>
+                        <div class="uk-margin">
+                            <label class="uk-form-label uk-text-bold">Hero Title</label>
+                            <input class="uk-input" type="text" name="hero_title" value="{{ config.get('title', '') if config else '' }}">
+                        </div>
+                        <div class="uk-margin">
+                            <label class="uk-form-label uk-text-bold">Subtitle / Lead</label>
+                            <input class="uk-input" type="text" name="hero_subtitle" value="{{ config.get('subtitle', '') if config else '' }}">
+                        </div>
+                        <div class="uk-margin">
+                            <label class="uk-form-label uk-text-bold">Section Height</label>
+                            <select class="uk-select" name="height">
+                                <option value="viewport" {{ 'selected' if config and config.get('height') == 'viewport' else '' }}>Full Height (100vh)</option>
+                                <option value="medium" {{ 'selected' if config and config.get('height') == 'medium' else '' }}>Medium</option>
+                                <option value="large" {{ 'selected' if config and config.get('height') == 'large' else '' }}>Large</option>
+                            </select>
+                        </div>
+
+                        <div class="uk-grid-small" uk-grid>
+                            <div class="uk-width-1-3@s">
+                                <label class="uk-form-label uk-text-bold">Overlay Color</label>
+                                <input class="uk-input" type="color" name="overlay_color" value="{{ config.get('overlay_color', '#000000') if config else '#000000' }}" style="height: 40px; padding: 2px;">
+                            </div>
+                            <div class="uk-width-1-3@s">
+                                <label class="uk-form-label uk-text-bold">Overlay Opacity</label>
+                                <input class="uk-input" type="number" name="overlay_opacity" step="0.1" min="0" max="1" value="{{ config.get('overlay_opacity', 0.4) if config else 0.4 }}">
+                            </div>
+                            <div class="uk-width-1-3@s">
+                                <label class="uk-form-label uk-text-bold">Alignment</label>
+                                <select class="uk-select" name="align">
+                                    <option value="left" {{ 'selected' if config and config.get('align') == 'left' else '' }}>Left</option>
+                                    <option value="center" {{ 'selected' if (not config or config.get('align') == 'center') else '' }}>Center</option>
+                                    <option value="right" {{ 'selected' if config and config.get('align') == 'right' else '' }}>Right</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="uk-margin-small">
+                            <label><input class="uk-checkbox" type="checkbox" name="text_shadow" {{ 'checked' if config and config.get('text_shadow') else '' }}> Subtle Text Shadow</label>
+                            <label class="uk-margin-left"><input class="uk-checkbox" type="checkbox" name="parallax" {{ 'checked' if (not config or config.get('parallax', True)) else '' }}> Parallax Effect</label>
+                        </div>
+
+                        <hr class="uk-divider-small">
+                        <div class="uk-text-meta uk-text-uppercase uk-margin-small-bottom">Call to Action Button</div>
+                        <div class="uk-grid-small" uk-grid>
+                            <div class="uk-width-1-2@s">
+                                <label class="uk-form-label uk-text-bold">Button Text</label>
+                                <input class="uk-input" type="text" name="btn_text" value="{{ config.get('btn_text', '') if config else '' }}" placeholder="Learn More">
+                            </div>
+                            <div class="uk-width-1-2@s">
+                                <label class="uk-form-label uk-text-bold">Button URL</label>
+                                <input class="uk-input" type="text" name="btn_url" value="{{ config.get('btn_url', '') if config else '' }}" placeholder="/about-us">
+                            </div>
+                            <div class="uk-width-1-1">
+                                <label class="uk-form-label uk-text-bold">Button Style</label>
+                                <select class="uk-select" name="btn_style">
+                                    <option value="default" {{ 'selected' if config and config.get('btn_style') == 'default' else '' }}>Default</option>
+                                    <option value="primary" {{ 'selected' if (not config or config.get('btn_style') == 'primary') else '' }}>Primary</option>
+                                    <option value="secondary" {{ 'selected' if config and config.get('btn_style') == 'secondary' else '' }}>Secondary</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Slider Config -->
+                    <div class="module-config uk-hidden" data-type="slider">
+                        <div class="uk-card uk-card-default uk-card-body uk-margin-small">
+                            <h4 class="uk-card-title">Slider Options</h4>
+                            <div class="uk-grid-small uk-child-width-1-3@s" uk-grid>
+                                <div>
+                                    <label><input class="uk-checkbox" type="checkbox" name="autoplay" {{ 'checked' if config and config.get('autoplay') else '' }}> Autoplay</label>
+                                </div>
+                                <div>
+                                    <label><input class="uk-checkbox" type="checkbox" name="infinite" {{ 'checked' if (not config or config.get('infinite', True)) else '' }}> Infinite Loop</label>
+                                </div>
+                                <div>
+                                    <label><input class="uk-checkbox" type="checkbox" name="center" {{ 'checked' if config and config.get('center') else '' }}> Center Mode</label>
+                                </div>
+                                <div>
+                                    <label><input class="uk-checkbox" type="checkbox" name="nav_arrows" {{ 'checked' if (not config or config.get('nav_arrows', True)) else '' }}> Show Arrows</label>
+                                </div>
+                                <div>
+                                    <label><input class="uk-checkbox" type="checkbox" name="nav_dots" {{ 'checked' if (not config or config.get('nav_dots', True)) else '' }}> Show Dots</label>
+                                </div>
+                                <div>
+                                    <label class="uk-form-label">Autoplay Interval (ms)</label>
+                                    <input class="uk-input uk-form-small" type="number" name="interval" value="{{ config.get('interval', 3000) if config else 3000 }}">
+                                </div>
+                            </div>
+                            
+                            <hr>
+                            <h4 class="uk-text-muted uk-text-uppercase">Slides</h4>
+                            <div id="slides-container">
+                                {% set slider_slides = config.get('slides', []) if (config and module and module.type == 'slider') else [] %}
+                                {% for slide in slider_slides %}
+                                <div class="slide-item uk-background-muted uk-padding-small uk-margin-small uk-position-relative">
+                                    <a class="uk-position-top-right uk-padding-small uk-text-danger" onclick="this.parentElement.remove()" uk-icon="trash" style="cursor: pointer;"></a>
+                                    <div class="uk-grid-small" uk-grid>
+                                        <div class="uk-width-1-3@s">
+                                            <label class="uk-form-label">Image URL</label>
+                                            <div class="uk-flex">
+                                                <input class="uk-input uk-form-small" type="text" name="slide_img[]" value="{{ slide.image }}">
+                                                <button type="button" class="uk-button uk-button-default uk-button-small" onclick="currentSlideInput=this.previousElementSibling; openMediaPicker('slide')">...</button>
+                                            </div>
+                                        </div>
+                                        <div class="uk-width-1-3@s">
+                                            <label class="uk-form-label">Title / Caption</label>
+                                            <input class="uk-input uk-form-small" type="text" name="slide_title[]" value="{{ slide.title }}">
+                                        </div>
+                                        <div class="uk-width-1-3@s">
+                                            <label class="uk-form-label">URL / Link</label>
+                                            <input class="uk-input uk-form-small" type="text" name="slide_url[]" value="{{ slide.url }}">
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <button type="button" class="uk-button uk-button-default uk-button-small uk-width-1-1 uk-margin-small" onclick="addSlide()">+ Add Slide</button>
+                        </div>
+                    </div>
+                </div>
+            </li>
+
+            <!-- TAB 2: ASSIGNMENT -->
+            <li>
+                <div class="uk-margin">
+                    <label class="uk-form-label uk-text-bold">Display on Pages</label>
+                    <div class="uk-form-controls">
+                        <select class="uk-select" name="assignment_type" id="assignment-type">
+                            <option value="all" {{ 'selected' if (not module or module.assignment_type == 'all') else '' }}>All Pages</option>
+                            <option value="none" {{ 'selected' if (module and module.assignment_type == 'none') else '' }}>No Pages</option>
+                            <option value="selected" {{ 'selected' if (module and module.assignment_type == 'selected') else '' }}>Only on selected pages</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="assignment-selection" class="{{ 'uk-hidden' if (not module or module.assignment_type != 'selected') else '' }}">
+                    <p class="uk-text-meta">Select the menu items (pages) where this module should be visible.</p>
+                    
+                    {% set assigned_ids = (module.assigned_items | map(attribute='id') | list) if module else [] %}
+                    
+                    <div class="uk-grid-small" uk-grid>
+                        {% for menu in menus %}
+                        <div class="uk-width-1-3@m">
+                            <div class="uk-card uk-card-small uk-card-default uk-card-body">
+                                <h5 class="uk-margin-small-bottom uk-text-uppercase">{{ menu.name }} Menu</h5>
+                                <div class="uk-height-max-small uk-overflow-auto">
+                                    <ul class="uk-list">
+                                        {% for item in menu_items %}
+                                            {% if item.menu_id == menu.id %}
+                                            <li>
+                                                <label>
+                                                    <input class="uk-checkbox" type="checkbox" name="assigned_items" value="{{ item.id }}" {{ 'checked' if item.id in assigned_ids else '' }}>
+                                                    {{ item.label }}
+                                                </label>
+                                            </li>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </li>
+        </ul>
+
+        <div class="uk-margin-large-top">
+            <button class="uk-button uk-button-primary" type="submit">Save Module</button>
+            <a href="{{ url_for('modules.modules_list') }}" class="uk-button uk-button-default">Cancel</a>
+        </div>
+    </form>
+  </div>
+
+<script>
+    function addSlide() {
+        const container = document.getElementById('slides-container');
+        const div = document.createElement('div');
+        div.className = 'slide-item uk-background-muted uk-padding-small uk-margin-small uk-position-relative';
+        div.innerHTML = `
+            <a class="uk-position-top-right uk-padding-small uk-text-danger" onclick="this.parentElement.remove()" uk-icon="trash" style="cursor: pointer;"></a>
+            <div class="uk-grid-small" uk-grid>
+                <div class="uk-width-1-3@s">
+                    <label class="uk-form-label">Image URL</label>
+                    <div class="uk-flex">
+                        <input class="uk-input uk-form-small slide-img-input" type="text" name="slide_img[]" value="">
+                        <button type="button" class="uk-button uk-button-default uk-button-small" onclick="currentSlideInput=this.previousElementSibling; openMediaPicker('slide')">...</button>
+                    </div>
+                </div>
+                <div class="uk-width-1-3@s">
+                    <label class="uk-form-label">Title / Caption</label>
+                    <input class="uk-input uk-form-small" type="text" name="slide_title[]" value="">
+                </div>
+                <div class="uk-width-1-3@s">
+                    <label class="uk-form-label">URL / Link</label>
+                    <input class="uk-input uk-form-small" type="text" name="slide_url[]" value="#">
+                </div>
+            </div>
+        `;
+        container.appendChild(div);
+        UIkit.grid(div.querySelector('[uk-grid]'));
+        UIkit.icon(div.querySelector('[uk-icon]'));
+    }
+
+    let currentSlideInput = null;
+
+    function openMediaPicker(target = 'hero') {
+        const width = 1000;
+        const height = 700;
+        const left = (window.screen.width / 2) - (width / 2);
+        const top = (window.screen.height / 2) - (height / 2);
+        
+        window.targetPicker = target;
+        
+        window.open(
+            '{{ url_for("media.media_list", mode="select") }}',
+            'MediaPicker',
+            `width=${width},height=${height},left=${left},top=${top},scrollbars=yes`
+        );
+    }
+
+    // Listen for image selection
+    window.addEventListener('message', function(event) {
+        if (event.data.type === 'insertImage' || event.data.mceAction === 'insertImage') {
+            if (window.targetPicker === 'slide' && currentSlideInput) {
+                currentSlideInput.value = event.data.url;
+            } else {
+                const heroInput = document.getElementById('hero-image-url');
+                if (heroInput) heroInput.value = event.data.url;
+            }
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Module Type Switching
+        var typeSelect = document.getElementById('module-type');
+        var configSections = document.querySelectorAll('.module-config');
+
+        function updateConfigs() {
+            var selectedType = typeSelect.value;
+            configSections.forEach(function(section) {
+                if (section.getAttribute('data-type') === selectedType) {
+                    section.classList.remove('uk-hidden');
+                } else {
+                    section.classList.add('uk-hidden');
+                }
+            });
+        }
+
+        typeSelect.addEventListener('change', updateConfigs);
+        updateConfigs(); 
+
+        // Assignment Type Switching
+        var assignSelect = document.getElementById('assignment-type');
+        var assignSelection = document.getElementById('assignment-selection');
+
+        function updateAssignment() {
+            if (assignSelect.value === 'selected') {
+                assignSelection.classList.remove('uk-hidden');
+            } else {
+                assignSelection.classList.add('uk-hidden');
+            }
+        }
+
+        assignSelect.addEventListener('change', updateAssignment);
+    });
+</script>
+{% endblock %}

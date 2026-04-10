@@ -1,0 +1,25 @@
+{% extends "theme_default/base.html" %}
+
+{% block title %}Blog{% endblock %}
+
+{% block content %}
+  <h1 class="uk-heading-small">Blog</h1>
+
+  {% if posts|length == 0 %}
+    <p class="uk-text-muted">No posts yet.</p>
+  {% else %}
+    <div class="uk-grid-medium uk-child-width-1-2@m uk-child-width-1-3@l" uk-grid>
+      {% for p in posts %}
+        <div>
+          <a class="uk-card uk-card-default uk-card-hover uk-card-body uk-display-block" href="/blog/{{ p.slug }}">
+            <h3 class="uk-card-title uk-margin-remove">{{ p.title }}</h3>
+            <div class="uk-text-meta uk-margin-small-top">
+              {% if p.published_at %}{{ p.published_at }}{% endif %}
+            </div>
+          </a>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endblock %}
+

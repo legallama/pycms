@@ -1,0 +1,104 @@
+{% extends "admin/base.html" %}
+
+{% block title %}{{ "Edit page" if page else "New page" }}{% endblock %}
+{% block page_title %}{{ "Edit page" if page else "New page" }}{% endblock %}
+
+{% block head %}
+  <script src="https://cdn.jsdelivr.net/npm/tinymce@6.8.5/tinymce.min.js" referrerpolicy="origin"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      tinymce.init({
+        selector: "#body_html",
+        height: 520,
+        menubar: false,
+        plugins: "link lists code table image",
+        toolbar: "undo redo | blocks | bold italic | bullist numlist | link image table | code",
+        image_title: true,
+        automatic_uploads: true,
+        file_picker_types: 'image',
+        file_picker_callback: function (cb, value, meta) {
+          const width = 800;
+          const height = 600;
+          const left = (window.innerWidth - width) / 2;
+          const top = (window.innerHeight - height) / 2;
+          
+          const mediaWindow = window.open(
+            "{{ url_for('media.media_list', mode='select') }}",
+            "MediaPicker",
+            `width=${width},height=${height},top=${top},left=${left}`
+          );
+
+          window.addEventListener('message', function handler(e) {
+            if (e.data.mceAction === 'insertImage') {
+              cb(e.data.url, { title: 'Image' });
+              window.removeEventListener('message', handler);
+            }
+          });
+        }
+      });
+    });
+  </script>
+{% endblock %}
+
+{% block content %}
+  <div class="uk-card uk-card-default uk-card-body">
+    <form method="post" novalidate>
+      {{ form.hidden_tag() }}
+
+      <div class="uk-grid-small uk-child-width-1-2@m" uk-grid>
+        <div>
+          <label class="uk-form-label" for="title">Title</label>
+          <div class="uk-form-controls">
+            {{ form.title(class_="uk-input", id="title") }}
+            {% for err in form.title.errors %}<div class="uk-text-danger uk-text-small">{{ err }}</div>{% endfor %}
+          </div>
+        </div>
+        <div>
+          <label class="uk-form-label" for="slug">Slug</label>
+          <div class="uk-form-controls">
+            {{ form.slug(class_="uk-input", id="slug") }}
+            {% for err in form.slug.errors %}<div class="uk-text-danger uk-text-small">{{ err }}</div>{% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div class="uk-margin uk-grid-small uk-child-width-1-2@m" uk-grid>
+        <div>
+          <label class="uk-form-label" for="status">Status</label>
+          <div class="uk-form-controls">
+            {{ form.status(class_="uk-select", id="status") }}
+          </div>
+        </div>
+        <div>
+          <label class="uk-form-label" for="layout">Template Layout</label>
+          <div class="uk-form-controls">
+            {{ form.layout(class_="uk-select", id="layout") }}
+          </div>
+        </div>
+      </div>
+
+      <div class="uk-margin uk-grid-small uk-child-width-1-2@m" uk-grid>
+        <div>
+          <label class="uk-form-label" for="menu_id">Assigned Menu</label>
+          <div class="uk-form-controls">
+            {{ form.menu_id(class_="uk-select", id="menu_id") }}
+            <p class="uk-text-meta">Leave as 'Default' to use system main menu.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="uk-margin">
+        <label class="uk-form-label" for="body_html">Body</label>
+        <div class="uk-form-controls">
+          {{ form.body_html(class_="uk-textarea", id="body_html", rows="12") }}
+        </div>
+      </div>
+
+      <div class="uk-margin uk-flex uk-flex-between">
+        <a class="uk-button uk-button-default" href="{{ url_for('cms.pages_list') }}">Back</a>
+        <button class="uk-button uk-button-primary" type="submit">Save</button>
+      </div>
+    </form>
+  </div>
+{% endblock %}
+

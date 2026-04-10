@@ -1,0 +1,26 @@
+{% extends "default/templates/layouts/default.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+  <div class="uk-grid-large uk-child-width-1-2@m uk-flex-middle" uk-grid>
+    <div>
+      <h1 class="uk-heading-medium">Modern Modular CMS</h1>
+      <p class="uk-text-lead">Customizable theme positions, drag-and-drop modules, and a professional CRM integration.</p>
+      <div class="uk-margin">
+        <a class="uk-button uk-button-primary" href="/admin/">Go to Admin Dashboard</a>
+      </div>
+    </div>
+    <div>
+      <div class="uk-card uk-card-default uk-card-body">
+        <h3 class="uk-card-title">Core Features</h3>
+        <ul class="uk-list uk-list-bullet">
+          <li><strong>Modular Layouts:</strong> Dynamic widget positions</li>
+          <li><strong>Media Management:</strong> Advanced file handling</li>
+          <li><strong>Theme Engine:</strong> Position-based rendering</li>
+          <li><strong>Clean UI:</strong> UIkit 3.21 based aesthetics</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+{% endblock %}

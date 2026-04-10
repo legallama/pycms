@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>{% block title %}Home{% endblock %} | pycms</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/uikit@3.21.12/dist/css/uikit.min.css" />
+    <script defer src="https://cdn.jsdelivr.net/npm/uikit@3.21.12/dist/js/uikit.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/uikit@3.21.12/dist/js/uikit-icons.min.js"></script>
+  </head>
+  <body>
+    <header class="uk-section uk-section-muted uk-padding-small">
+      <div class="uk-container">
+        <nav class="uk-navbar-container uk-navbar-transparent" uk-navbar>
+          <div class="uk-navbar-left">
+            <a class="uk-navbar-item uk-logo" href="/">pycms</a>
+          </div>
+          <div class="uk-navbar-right">
+            <ul class="uk-navbar-nav uk-visible@m">
+              {% for item in (main_menu_items or []) %}
+                <li><a href="{{ item.href }}">{{ item.label }}</a></li>
+              {% endfor %}
+              <li><a href="/admin/">Admin</a></li>
+            </ul>
+          </div>
+        </nav>
+      </div>
+    </header>
+
+    <main class="uk-section">
+      <div class="uk-container">
+        {% if modules and modules.header %}
+          {% for m in modules.header %}
+            <div class="uk-margin">{{ m.html | safe }}</div>
+          {% endfor %}
+        {% endif %}
+        <div class="uk-grid-large" uk-grid>
+          <div class="uk-width-expand">
+            {% block content %}{% endblock %}
+          </div>
+          {% if modules and modules.sidebar %}
+            <aside class="uk-width-1-3@l">
+              {% for m in modules.sidebar %}
+                <div class="uk-card uk-card-default uk-card-body uk-margin">
+                  {% if m.title %}<h4 class="uk-margin-remove-top">{{ m.title }}</h4>{% endif %}
+                  <div class="uk-content">{{ m.html | safe }}</div>
+                </div>
+              {% endfor %}
+            </aside>
+          {% endif %}
+        </div>
+        {% if modules and modules.footer %}
+          {% for m in modules.footer %}
+            <div class="uk-margin">{{ m.html | safe }}</div>
+          {% endfor %}
+        {% endif %}
+      </div>
+    </main>
+
+    <footer class="uk-section uk-section-small uk-section-muted">
+      <div class="uk-container uk-text-small uk-text-muted">
+        Powered by pycms
+      </div>
+    </footer>
+  </body>
+</html>
+

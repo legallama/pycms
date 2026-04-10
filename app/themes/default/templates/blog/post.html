@@ -1,0 +1,17 @@
+{% extends "default/templates/layouts/default.html" %}
+
+{% block title %}{{ post.title }}{% endblock %}
+
+{% block content %}
+<article class="uk-article">
+    <h1 class="uk-article-title">{{ post.title }}</h1>
+    <p class="uk-article-meta">
+        Updated {{ post.updated_at.strftime('%B %d, %Y') }}
+    </p>
+    <div class="uk-margin-large-top">
+        {{ post.body_html | safe }}
+    </div>
+</article>
+<hr class="uk-margin-large">
+<a href="/blog" class="uk-button uk-button-default">Back to Blog</a>
+{% endblock %}

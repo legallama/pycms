@@ -1,0 +1,16 @@
+{% extends "theme_default/base.html" %}
+
+{% block title %}{{ post.title }}{% endblock %}
+
+{% block content %}
+  <article class="uk-article">
+    <h1 class="uk-article-title">{{ post.title }}</h1>
+    <div class="uk-article-meta">
+      {% if post.published_at %}Published {{ post.published_at }}{% endif %}
+    </div>
+    <div class="uk-margin-large-top uk-content">
+      {{ post.body_html | safe }}
+    </div>
+  </article>
+{% endblock %}
+

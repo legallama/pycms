@@ -1,0 +1,10 @@
+{% extends layout_template %}
+{% block title %}{{ page.title }}{% endblock %}
+{% block content %}
+    <article class="uk-article">
+        <h1 class="uk-article-title">{{ page.title }}</h1>
+        <div class="uk-margin-large-top" style="font-size: 1.1em;">
+            {{ page.body_html | safe }}
+        </div>
+    </article>
+{% endblock %}

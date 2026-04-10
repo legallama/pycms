@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>{% block title %}Home{% endblock %} | Journal</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/uikit@3.21.12/dist/css/uikit.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #fcfbf7;
+            --accent: #111;
+            --muted: #666;
+            --border: #e5e2d9;
+        }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: #1a1a1a; line-height: 1.8; }
+        h1, h2, h3, h4, .uk-logo, .j-logo { font-family: 'Playfair Display', serif; font-weight: 700; color: #000; }
+        
+        .j-header { border-bottom: 1px solid var(--border); padding: 60px 0; background: #fff; }
+        .j-logo { font-size: 42px; letter-spacing: -1.5px; text-decoration: none !important; color: #000 !important; font-weight: 900; }
+        
+        .uk-navbar-nav > li > a { font-family: 'Inter', sans-serif; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); font-weight: 600; }
+        .uk-navbar-nav > li > a:hover { color: var(--accent); }
+
+        .uk-article-title { font-size: 3.5rem; line-height: 1.1; margin-bottom: 30px; }
+        .uk-article-meta { font-style: italic; font-family: 'Playfair Display', serif; color: var(--muted); border-top: 1px solid var(--border); padding-top: 15px; margin-top: 20px; }
+
+        .module-block { margin-bottom: 60px; padding: 30px; background: #fff; border: 1px solid var(--border); box-shadow: 10px 10px 0px rgba(0,0,0,0.02); }
+        .module-title { font-size: 12px; font-weight: 600; text-transform: uppercase; color: var(--muted); margin-bottom: 25px; letter-spacing: 3px; text-align: center; }
+        .module-title::after { content: ""; display: block; width: 30px; height: 2px; background: var(--accent); margin: 10px auto 0; }
+
+        .uk-button-default { border: 2px solid var(--accent); color: var(--accent); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; padding: 10px 30px; border-radius: 0; transition: 0.3s; }
+        .uk-button-default:hover { background: var(--accent); color: #fff; }
+
+        footer { border-top: 1px solid var(--border); padding: 80px 0; background: #fff; }
+        footer p { font-family: 'Playfair Display', serif; font-style: italic; color: #999; }
+        
+        /* Layout Tweaks */
+        .uk-section { padding-top: 100px; padding-bottom: 100px; }
+    </style>
+</head>
+<body>
+    <header class="j-header">
+        <div class="uk-container">
+            <div class="uk-grid-small uk-flex-middle" uk-grid>
+                <div class="uk-width-expand">
+                    <a href="/" class="j-logo">Journal.</a>
+                    {{ render_position("header-left") }}
+                </div>
+                <div class="uk-width-auto">
+                    <ul class="uk-navbar-nav">
+                        {% for item in main_menu_items %}
+                            <li><a href="{{ item.href }}">{{ item.label }}</a></li>
+                        {% endfor %}
+                    </ul>
+                    {{ render_position("header-right") }}
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="uk-section">
+        <div class="uk-container uk-container-small">
+            {{ render_position("main-top") }}
+            {% block main_content %}{% endblock %}
+            {{ render_position("main-bottom") }}
+        </div>
+    </main>
+
+    <footer>
+        <div class="uk-container">
+            {{ render_position("footer") }}
+            <p class="uk-margin-top">&copy; 2026 Crafted with Journal.</p>
+        </div>
+    </footer>
+    <script src="https://cdn.jsdelivr.net/npm/uikit@3.21.12/dist/js/uikit.min.js"></script>
+</body>
+</html>

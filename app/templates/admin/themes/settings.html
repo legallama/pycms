@@ -1,0 +1,104 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Theme Settings{% endblock %}
+{% block page_title %}Settings / {{ theme.name }}{% endblock %}
+
+{% block content %}
+<div class="uk-card uk-card-default uk-card-body">
+    <form method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        
+        <h3 class="uk-heading-divider">Position Configuration</h3>
+        <p class="uk-text-meta">Configure widths and manage custom positions for the active theme.</p>
+
+        <div class="uk-margin">
+            <table class="uk-table uk-table-divider uk-table-middle">
+                <thead>
+                    <tr>
+                        <th class="uk-table-expand">Position</th>
+                        <th class="uk-width-medium">Width Setting</th>
+                        <th class="uk-table-shrink"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set widths = config.get('position_widths', {}) %}
+                    {% set custom_positions = config.get('custom_positions', {}) %}
+                    {% set theme_positions = theme.get('positions', {}) %}
+                    
+                    {# Standard Positions #}
+                    {% for pos, label in theme_positions.items() %}
+                    <tr>
+                        <td>
+                            <span class="uk-text-bold">{{ label }}</span><br>
+                            <code class="uk-text-small text-primary">{{ pos }}</code>
+                        </td>
+                        <td>
+                            <select class="uk-select" name="width_{{ pos }}">
+                                <option value="container" {{ 'selected' if widths.get(pos) == 'container' else '' }}>Standard (Container)</option>
+                                <option value="full" {{ 'selected' if widths.get(pos) == 'full' else '' }}>Full Width</option>
+                            </select>
+                        </td>
+                        <td></td>
+                    </tr>
+                    {% endfor %}
+
+                    {# Custom Positions #}
+                    {% if custom_positions %}
+                    <tr class="uk-background-muted">
+                        <td colspan="3">
+                            <div class="uk-padding-small uk-padding-remove-vertical">
+                                <span class="uk-text-small uk-text-uppercase uk-text-bold uk-text-primary">Custom Positions (Deletable)</span>
+                            </div>
+                        </td>
+                    </tr>
+                    {% for pos, label in custom_positions.items() %}
+                    <tr class="uk-background-muted">
+                        <td>
+                            <span class="uk-text-bold">{{ label }}</span><br>
+                            <code class="uk-text-small uk-text-warning">{{ pos }}</code>
+                        </td>
+                        <td>
+                            <select class="uk-select" name="width_{{ pos }}">
+                                <option value="container" {{ 'selected' if widths.get(pos) == 'container' else '' }}>Standard (Container)</option>
+                                <option value="full" {{ 'selected' if widths.get(pos) == 'full' else '' }}>Full Width</option>
+                            </select>
+                        </td>
+                        <td class="uk-text-right">
+                            <button type="submit" name="delete_pos" value="{{ pos }}" 
+                                    class="uk-button uk-button-danger uk-button-small"
+                                    onclick="return confirm('Delete this custom position? This cannot be undone.')">
+                                <span uk-icon="icon: trash; ratio: 0.8"></span> Delete
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+
+        <h3 class="uk-heading-divider uk-margin-large-top">Add New Position</h3>
+        <div class="uk-grid-small uk-flex-bottom" uk-grid>
+            <div class="uk-width-expand">
+                <label class="uk-form-label">Position Name (ID)</label>
+                <input class="uk-input" type="text" name="new_pos_id" placeholder="e.g. above-content">
+            </div>
+            <div class="uk-width-expand">
+                <label class="uk-form-label">Display Label</label>
+                <input class="uk-input" type="text" name="new_pos_label" placeholder="e.g. Above Content">
+            </div>
+            <div class="uk-width-auto">
+                <button type="submit" class="uk-button uk-button-default">Add</button>
+            </div>
+        </div>
+        <p class="uk-text-meta uk-margin-small-top">
+            <span uk-icon="info"></span> After adding, you must manually add <code>{{ '{{' }} render_position("your-id") {{ '}}' }}</code> to your theme template.
+        </p>
+
+        <div class="uk-margin-large-top">
+            <button class="uk-button uk-button-primary uk-button-large" type="submit">Save All Settings</button>
+            <a href="{{ url_for('site.themes_list') }}" class="uk-button uk-button-default uk-button-large">Back to Themes</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

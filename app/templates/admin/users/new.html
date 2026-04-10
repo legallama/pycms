@@ -1,0 +1,46 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Create user{% endblock %}
+{% block page_title %}Create user{% endblock %}
+
+{% block content %}
+  <div class="uk-card uk-card-default uk-card-body uk-width-1-1 uk-width-1-2@l">
+    <form method="post" novalidate>
+      {{ form.hidden_tag() }}
+
+      <div class="uk-margin">
+        <label class="uk-form-label" for="email">Email</label>
+        <div class="uk-form-controls">
+          {{ form.email(class_="uk-input", id="email") }}
+          {% for err in form.email.errors %}<div class="uk-text-danger uk-text-small">{{ err }}</div>{% endfor %}
+        </div>
+      </div>
+
+      <div class="uk-margin">
+        <label class="uk-form-label" for="role">Role</label>
+        <div class="uk-form-controls">
+          {{ form.role(class_="uk-select", id="role") }}
+          {% for err in form.role.errors %}<div class="uk-text-danger uk-text-small">{{ err }}</div>{% endfor %}
+        </div>
+      </div>
+
+      <div class="uk-margin">
+        <label class="uk-form-label" for="password">Password</label>
+        <div class="uk-form-controls">
+          {{ form.password(class_="uk-input", id="password") }}
+          {% for err in form.password.errors %}<div class="uk-text-danger uk-text-small">{{ err }}</div>{% endfor %}
+        </div>
+      </div>
+
+      <div class="uk-margin">
+        <label>{{ form.is_active(class_="uk-checkbox") }} Active</label>
+      </div>
+
+      <div class="uk-margin uk-flex uk-flex-between">
+        <a class="uk-button uk-button-default" href="{{ url_for('admin.users_list') }}">Cancel</a>
+        <button class="uk-button uk-button-primary" type="submit">Create</button>
+      </div>
+    </form>
+  </div>
+{% endblock %}
+

@@ -1,0 +1,25 @@
+{% extends "default/templates/layouts/default.html" %}
+
+{% block title %}Blog{% endblock %}
+
+{% block content %}
+<h1 class="uk-heading-small">Recent Posts</h1>
+<hr class="uk-divider-small">
+
+{% for post in posts %}
+<article class="uk-article uk-margin-large-bottom">
+    <h2 class="uk-article-title"><a class="uk-link-reset" href="/blog/{{ post.slug }}">{{ post.title }}</a></h2>
+    <p class="uk-article-meta">
+        Published on {{ post.published_at.strftime('%B %d, %Y') if post.published_at else 'Draft' }}
+    </p>
+    <p>{{ post.body_html | striptags | truncate(300) }}</p>
+    <div class="uk-grid-small uk-child-width-auto" uk-grid>
+        <div>
+            <a class="uk-button uk-button-text" href="/blog/{{ post.slug }}">Read more</a>
+        </div>
+    </div>
+</article>
+{% else %}
+<p>No posts found.</p>
+{% endfor %}
+{% endblock %}

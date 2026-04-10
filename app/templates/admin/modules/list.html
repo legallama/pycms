@@ -1,0 +1,61 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Modules{% endblock %}
+{% block page_title %}Modules{% endblock %}
+
+{% block content %}
+  <div class="uk-card uk-card-default uk-card-body">
+    <div class="uk-flex uk-flex-between uk-flex-middle">
+      <h3 class="uk-card-title uk-margin-remove">Modules</h3>
+      <a class="uk-button uk-button-primary uk-button-small" href="{{ url_for('modules.modules_new') }}">New module</a>
+    </div>
+
+    <div class="uk-overflow-auto uk-margin">
+      <table class="uk-table uk-table-divider uk-table-small">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Position</th>
+            <th>Pages</th>
+            <th>Enabled</th>
+            <th>Order</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for m in mods %}
+            <tr>
+              <td>{{ m.title }}</td>
+              <td><span class="uk-label">{{ m.position }}</span></td>
+              <td>
+                {% if m.assignment_type == "all" %}
+                  All
+                {% elif m.assignment_type == "none" %}
+                  None
+                {% else %}
+                  Selected ({{ m.assigned_items | length }})
+                {% endif %}
+              </td>
+              <td>
+                {% if m.enabled %}
+                  <span class="uk-badge">Yes</span>
+                {% else %}
+                  <span class="uk-badge uk-background-muted uk-text-muted">No</span>
+                {% endif %}
+              </td>
+              <td>{{ m.order }}</td>
+              <td class="uk-text-nowrap">
+                <a class="uk-button uk-button-default uk-button-small" href="{{ url_for('modules.modules_edit', module_id=m.id) }}">Edit</a>
+                <form class="uk-display-inline" method="post" action="{{ url_for('modules.modules_delete', module_id=m.id) }}" onsubmit="return confirm('Delete this module?')">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                  <button class="uk-button uk-button-danger uk-button-small" type="submit">Delete</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endblock %}
+

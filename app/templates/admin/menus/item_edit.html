@@ -1,0 +1,43 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Edit Menu Item{% endblock %}
+{% block page_title %}Edit: {{ item.label }}{% endblock %}
+
+{% block content %}
+<div class="uk-card uk-card-default uk-card-body uk-width-1-2@l">
+    <form method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        
+        <div class="uk-margin">
+            <label class="uk-form-label">Label</label>
+            <input class="uk-input" type="text" name="label" value="{{ item.label }}" required>
+        </div>
+
+        <div class="uk-margin">
+            <label class="uk-form-label">Icon (UIkit name, e.g. <code>home</code>)</label>
+            <input class="uk-input" type="text" name="icon" value="{{ item.icon or '' }}">
+        </div>
+
+        <div class="uk-margin">
+            <label class="uk-form-label">Parent Item</label>
+            <select class="uk-select" name="parent_id">
+                <option value="">-- No Parent (Root Level) --</option>
+                {% for p in items %}
+                <option value="{{ p.id }}" {{ 'selected' if item.parent_id == p.id else '' }}>{{ p.label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="uk-margin">
+            <label class="uk-form-label">URL / Path</label>
+            <input class="uk-input" type="text" name="url" value="{{ item.url }}" required>
+            <p class="uk-text-meta">Example: <code>/about-us</code> or <code>https://google.com</code></p>
+        </div>
+
+        <div class="uk-margin uk-flex uk-flex-between">
+            <a href="{{ url_for('site.menus_edit', menu_id=item.menu_id) }}" class="uk-button uk-button-default">Cancel</a>
+            <button type="submit" class="uk-button uk-button-primary">Save Changes</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

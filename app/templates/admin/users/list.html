@@ -1,0 +1,52 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Users{% endblock %}
+{% block page_title %}Users{% endblock %}
+
+{% block content %}
+  <div class="uk-card uk-card-default uk-card-body">
+    <div class="uk-flex uk-flex-between uk-flex-middle">
+      <div>
+        <h3 class="uk-card-title uk-margin-remove">Users</h3>
+        <div class="uk-text-meta">Admin-only</div>
+      </div>
+      <div>
+        <a class="uk-button uk-button-primary uk-button-small" href="{{ url_for('admin.users_new') }}">Create user</a>
+      </div>
+    </div>
+
+    <div class="uk-overflow-auto uk-margin">
+      <table class="uk-table uk-table-divider uk-table-small">
+        <thead>
+          <tr>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th>Created</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in users %}
+            <tr>
+              <td>{{ u.email }}</td>
+              <td><span class="uk-label">{{ u.role }}</span></td>
+              <td>
+                {% if u.is_active %}
+                  <span class="uk-badge">Active</span>
+                {% else %}
+                  <span class="uk-badge uk-background-muted uk-text-muted">Disabled</span>
+                {% endif %}
+              </td>
+              <td class="uk-text-nowrap">{{ u.created_at }}</td>
+              <td class="uk-text-nowrap">
+                <a class="uk-button uk-button-default uk-button-small" href="{{ url_for('admin.users_edit', user_id=u.id) }}">Edit</a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endblock %}
+

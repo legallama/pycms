@@ -1,0 +1,832 @@
+{% extends "admin/base.html" if mode != 'select' else "admin/minimal.html" %}
+
+{% block title %}Media{% endblock %}
+{% block page_title %}Media Library{% endblock %}
+
+{% block head %}
+<style>
+/* ═══════════════════════════════════════
+   Media Manager Styles
+   ═══════════════════════════════════════ */
+
+/* ─── Upload Zone ─── */
+.media-upload-zone {
+    border: 2px dashed var(--border-default);
+    border-radius: 16px;
+    padding: 48px 32px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: var(--bg-card);
+    position: relative;
+    overflow: hidden;
+}
+
+.media-upload-zone:hover,
+.media-upload-zone.drag-over {
+    border-color: var(--primary);
+    background: var(--primary-glow);
+}
+
+.media-upload-zone.drag-over {
+    transform: scale(1.01);
+    box-shadow: 0 0 0 4px var(--primary-glow);
+}
+
+.media-upload-zone .upload-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    background: var(--primary-glow-strong);
+    color: var(--primary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+    transition: transform 0.3s ease;
+}
+
+.media-upload-zone:hover .upload-icon {
+    transform: translateY(-4px);
+}
+
+.media-upload-zone input[type="file"] {
+    display: none;
+}
+
+.upload-progress {
+    display: none;
+    margin-top: 16px;
+}
+
+.upload-progress.active {
+    display: block;
+}
+
+.upload-progress-bar {
+    height: 4px;
+    border-radius: 2px;
+    background: var(--bg-elevated);
+    overflow: hidden;
+}
+
+.upload-progress-bar-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--primary), var(--primary-hover));
+    border-radius: 2px;
+    transition: width 0.3s ease;
+}
+
+/* ─── Toolbar ─── */
+.media-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+}
+
+.media-toolbar-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.media-toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.media-search {
+    width: 260px;
+}
+
+.media-count {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-weight: 500;
+    padding: 6px 12px;
+    background: var(--bg-elevated);
+    border-radius: 8px;
+}
+
+.view-toggle-btn {
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: var(--bg-elevated);
+    color: var(--text-muted);
+    border: 1px solid var(--border-default);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.view-toggle-btn:hover {
+    color: var(--primary);
+    border-color: var(--primary);
+}
+
+.view-toggle-btn.active {
+    background: var(--primary-glow);
+    color: var(--primary);
+    border-color: var(--primary);
+}
+
+/* ─── Grid View ─── */
+.media-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.media-grid-item {
+    background: var(--bg-card);
+    border: 1px solid var(--border-default);
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    position: relative;
+    group: true;
+}
+
+.media-grid-item:hover {
+    border-color: var(--primary);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.2);
+}
+
+.media-grid-thumb {
+    width: 100%;
+    aspect-ratio: 1;
+    overflow: hidden;
+    background: var(--bg-elevated);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.media-grid-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.4s ease;
+}
+
+.media-grid-item:hover .media-grid-thumb img {
+    transform: scale(1.05);
+}
+
+.media-grid-thumb .file-type-icon {
+    color: var(--text-muted);
+    opacity: 0.5;
+}
+
+.media-grid-info {
+    padding: 12px 14px;
+}
+
+.media-grid-info .file-name {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-heading);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 4px;
+}
+
+.media-grid-info .file-meta {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.media-grid-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.media-grid-item:hover .media-grid-overlay {
+    opacity: 1;
+}
+
+.media-grid-overlay .overlay-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(8px);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    text-decoration: none;
+}
+
+.media-grid-overlay .overlay-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+    color: #fff;
+}
+
+.media-grid-overlay .overlay-btn.danger:hover {
+    background: rgba(239, 68, 68, 0.6);
+}
+
+/* ─── List View ─── */
+.media-list-view {
+    display: none;
+}
+
+.media-list-view.active {
+    display: block;
+}
+
+.media-grid-view.active {
+    display: grid;
+}
+
+.media-grid-view {
+    display: none;
+}
+
+.media-list-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-default);
+    border-radius: 10px;
+    margin-bottom: 8px;
+    transition: all 0.2s ease;
+}
+
+.media-list-item:hover {
+    border-color: var(--primary);
+    background: var(--bg-card-hover);
+}
+
+.media-list-thumb {
+    width: 52px;
+    height: 52px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--bg-elevated);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.media-list-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.media-list-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.media-list-info .file-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-heading);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.media-list-info .file-meta {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.media-list-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.media-list-actions .action-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: var(--bg-elevated);
+    color: var(--text-secondary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid var(--border-default);
+    text-decoration: none;
+}
+
+.media-list-actions .action-btn:hover {
+    color: var(--primary);
+    border-color: var(--primary);
+    background: var(--primary-glow);
+}
+
+.media-list-actions .action-btn.danger:hover {
+    color: var(--danger);
+    border-color: var(--danger);
+    background: var(--label-danger-bg);
+}
+
+/* ─── Detail Modal ─── */
+.media-detail-preview {
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--bg-elevated);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+    max-height: 400px;
+}
+
+.media-detail-preview img {
+    max-width: 100%;
+    max-height: 400px;
+    object-fit: contain;
+}
+
+.media-detail-meta {
+    margin-top: 20px;
+}
+
+.media-detail-meta dt {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.media-detail-meta dd {
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    margin-bottom: 16px;
+    margin-left: 0;
+    word-break: break-all;
+}
+
+.copy-url-input {
+    display: flex;
+    gap: 8px;
+}
+
+.copy-url-input input {
+    flex: 1;
+    font-size: 0.8rem !important;
+    font-family: 'SF Mono','Consolas',monospace;
+}
+
+.copy-url-input button {
+    flex-shrink: 0;
+}
+
+/* ─── Empty State ─── */
+.media-empty {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.media-empty-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 20px;
+    background: var(--primary-glow);
+    color: var(--primary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+/* ─── Toast ─── */
+.copy-toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--success);
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.3s ease;
+    z-index: 10000;
+    pointer-events: none;
+}
+
+.copy-toast.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* ─── Modal overrides ─── */
+.uk-modal-dialog {
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border-default) !important;
+    border-radius: 16px !important;
+}
+
+.uk-modal-header {
+    background: transparent !important;
+    border-bottom: 1px solid var(--border-default) !important;
+}
+
+.uk-modal-body {
+    color: var(--text-primary) !important;
+}
+
+.uk-modal-footer {
+    background: transparent !important;
+    border-top: 1px solid var(--border-default) !important;
+}
+
+.uk-modal-title {
+    color: var(--text-heading) !important;
+    font-size: 1.15rem !important;
+}
+
+@media (max-width: 640px) {
+    .media-grid {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 12px;
+    }
+
+    .media-search {
+        width: 100%;
+    }
+
+    .media-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Upload Zone -->
+<div class="media-upload-zone" id="upload-zone">
+    <form id="upload-form" method="post" action="{{ url_for('media.media_upload') }}" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <input type="file" name="file" id="file-input" accept="image/*,.pdf" />
+    </form>
+    <div class="upload-icon" uk-icon="icon: cloud-upload; ratio: 2"></div>
+    <div>
+        <p class="uk-text-bold uk-margin-remove" style="color: var(--text-heading);">
+            Drop files here or <span style="color: var(--primary); cursor: pointer;">browse</span>
+        </p>
+        <p class="uk-text-meta uk-margin-small-top">
+            PNG, JPG, GIF, WebP, or PDF — Max 15 MB
+        </p>
+    </div>
+    <div class="upload-progress" id="upload-progress">
+        <div class="upload-progress-bar">
+            <div class="upload-progress-bar-fill" id="upload-progress-fill"></div>
+        </div>
+        <p class="uk-text-meta uk-margin-small-top" id="upload-status">Uploading...</p>
+    </div>
+</div>
+
+<!-- Toolbar -->
+<div class="media-toolbar uk-margin-top">
+    <div class="media-toolbar-left">
+        <div class="media-count" id="media-count">
+            {{ files|length }} file{{ 's' if files|length != 1 else '' }}
+        </div>
+        <div class="uk-inline media-search">
+            <span class="uk-form-icon" uk-icon="icon: search; ratio: 0.8"></span>
+            <input class="uk-input uk-form-small" type="text" id="media-search" placeholder="Search files...">
+        </div>
+    </div>
+    <div class="media-toolbar-right">
+        <button class="view-toggle-btn active" id="btn-grid-view" title="Grid view" uk-icon="icon: grid; ratio: 0.85"></button>
+        <button class="view-toggle-btn" id="btn-list-view" title="List view" uk-icon="icon: list; ratio: 0.85"></button>
+    </div>
+</div>
+
+{% if files %}
+<!-- Grid View -->
+<div class="media-grid media-grid-view active" id="grid-view">
+    {% for f in files %}
+    <div class="media-grid-item" data-filename="{{ f.filename|lower }}" data-id="{{ f.id }}">
+        <div class="media-grid-thumb">
+            {% if f.mime.startswith('image/') %}
+            <img src="{{ url_for('media.uploads_serve', relpath='thumbs/' ~ f.path.replace('\\', '/').split('/')[-1]) }}"
+                 alt="{{ f.filename }}" loading="lazy">
+            {% else %}
+            <span class="file-type-icon" uk-icon="icon: file-pdf; ratio: 2.5"></span>
+            {% endif %}
+
+            <div class="media-grid-overlay">
+                {% if mode == 'select' %}
+                <button class="overlay-btn" title="Select this image"
+                        onclick="event.stopPropagation(); selectImage('{{ url_for('media.uploads_serve', relpath=f.path) }}')"
+                        uk-icon="icon: check; ratio: 1.2"></button>
+                {% else %}
+                <a class="overlay-btn" href="{{ url_for('media.uploads_serve', relpath=f.path) }}"
+                   target="_blank" title="Open in new tab" uk-icon="icon: expand; ratio: 0.9"></a>
+
+                <button class="overlay-btn" title="Copy URL"
+                        onclick="event.stopPropagation(); copyUrl('{{ url_for('media.uploads_serve', relpath=f.path) }}')"
+                        uk-icon="icon: link; ratio: 0.9"></button>
+
+                <button class="overlay-btn" title="Details"
+                        onclick="event.stopPropagation(); showDetail({{ f.id }})"
+                        uk-icon="icon: info; ratio: 0.9"></button>
+
+                <form method="post" action="{{ url_for('media.media_delete', file_id=f.id) }}"
+                      onsubmit="event.stopPropagation(); return confirm('Delete this file?')" style="margin:0">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    <button type="submit" class="overlay-btn danger" title="Delete"
+                            uk-icon="icon: trash; ratio: 0.9"></button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+        <div class="media-grid-info">
+            <div class="file-name" title="{{ f.filename }}">{{ f.filename }}</div>
+            <div class="file-meta">
+                <span>{{ format_size(f.size) }}</span>
+                {% if f.width %}<span>{{ f.width }}×{{ f.height }}</span>{% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- List View -->
+<div class="media-list-view" id="list-view">
+    {% for f in files %}
+    <div class="media-list-item" data-filename="{{ f.filename|lower }}" data-id="{{ f.id }}">
+        <div class="media-list-thumb">
+            {% if f.mime.startswith('image/') %}
+            <img src="{{ url_for('media.uploads_serve', relpath='thumbs/' ~ f.path.replace('\\', '/').split('/')[-1]) }}"
+                 alt="{{ f.filename }}" loading="lazy">
+            {% else %}
+            <span uk-icon="icon: file-pdf; ratio: 1.2" style="color: var(--text-muted);"></span>
+            {% endif %}
+        </div>
+        <div class="media-list-info">
+            <div class="file-name">{{ f.filename }}</div>
+            <div class="file-meta">
+                {{ f.mime }} · {{ format_size(f.size) }}
+                {% if f.width %} · {{ f.width }}×{{ f.height }}{% endif %}
+                 · {{ f.created_at.strftime('%b %d, %Y') }}
+            </div>
+        </div>
+        <div class="media-list-actions">
+            {% if mode == 'select' %}
+            <button class="uk-button uk-button-primary uk-button-small" 
+                    onclick="selectImage('{{ url_for('media.uploads_serve', relpath=f.path) }}')">
+                Select
+            </button>
+            {% else %}
+            <button class="action-btn" title="Copy URL"
+                    onclick="copyUrl('{{ url_for('media.uploads_serve', relpath=f.path) }}')"
+                    uk-icon="icon: link; ratio: 0.75"></button>
+            <a class="action-btn" href="{{ url_for('media.uploads_serve', relpath=f.path) }}"
+               target="_blank" title="Open" uk-icon="icon: expand; ratio: 0.75"></a>
+            <button class="action-btn" title="Details"
+                    onclick="showDetail({{ f.id }})"
+                    uk-icon="icon: info; ratio: 0.75"></button>
+            <form method="post" action="{{ url_for('media.media_delete', file_id=f.id) }}"
+                  onsubmit="return confirm('Delete this file?')" style="margin:0; display:inline;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <button type="submit" class="action-btn danger" title="Delete"
+                        uk-icon="icon: trash; ratio: 0.75"></button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% else %}
+<!-- Empty State -->
+<div class="media-empty">
+    <div class="media-empty-icon" uk-icon="icon: image; ratio: 2.5"></div>
+    <h3 class="uk-text-bold">No media yet</h3>
+    <p class="uk-text-muted">Upload your first file by dragging it above or clicking the upload area.</p>
+</div>
+{% endif %}
+
+<!-- Detail Modals -->
+{% for f in files %}
+<div id="media-detail-{{ f.id }}" uk-modal>
+    <div class="uk-modal-dialog uk-margin-auto-vertical">
+        <div class="uk-modal-header">
+            <h2 class="uk-modal-title">{{ f.filename }}</h2>
+            <button class="uk-modal-close-default" type="button" uk-close></button>
+        </div>
+        <div class="uk-modal-body">
+            <div class="media-detail-preview">
+                {% if f.mime.startswith('image/') %}
+                <img src="{{ url_for('media.uploads_serve', relpath=f.path) }}" alt="{{ f.filename }}">
+                {% else %}
+                <span uk-icon="icon: file-pdf; ratio: 4" style="color: var(--text-muted); padding: 40px;"></span>
+                {% endif %}
+            </div>
+
+            <dl class="media-detail-meta uk-grid-small uk-child-width-1-2@s" uk-grid>
+                <div>
+                    <dt>Filename</dt>
+                    <dd>{{ f.filename }}</dd>
+                </div>
+                <div>
+                    <dt>Type</dt>
+                    <dd>{{ f.mime }}</dd>
+                </div>
+                <div>
+                    <dt>File Size</dt>
+                    <dd>{{ format_size(f.size) }}</dd>
+                </div>
+                {% if f.width %}
+                <div>
+                    <dt>Dimensions</dt>
+                    <dd>{{ f.width }} × {{ f.height }} px</dd>
+                </div>
+                {% endif %}
+                <div>
+                    <dt>Uploaded</dt>
+                    <dd>{{ f.created_at.strftime('%B %d, %Y at %I:%M %p') }}</dd>
+                </div>
+            </dl>
+
+            <div class="uk-margin-top">
+                <dt class="uk-text-meta" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; margin-bottom: 6px;">
+                    File URL
+                </dt>
+                <div class="copy-url-input">
+                    <input class="uk-input uk-form-small" type="text" readonly
+                           value="{{ url_for('media.uploads_serve', relpath=f.path, _external=True) }}"
+                           id="url-input-{{ f.id }}">
+                    <button class="uk-button uk-button-primary uk-button-small"
+                            onclick="copyUrl('{{ url_for('media.uploads_serve', relpath=f.path, _external=True) }}')">
+                        Copy
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="uk-modal-footer uk-text-right">
+            <a class="uk-button uk-button-default uk-button-small" href="{{ url_for('media.uploads_serve', relpath=f.path) }}" target="_blank">
+                Open Original
+            </a>
+            <form method="post" action="{{ url_for('media.media_delete', file_id=f.id) }}"
+                  onsubmit="return confirm('Permanently delete this file?')" style="display: inline;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <button type="submit" class="uk-button uk-button-small" style="background: var(--label-danger-bg) !important; color: var(--danger) !important;">
+                    Delete File
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<!-- Copy Toast -->
+<div class="copy-toast" id="copy-toast">✓ URL copied to clipboard</div>
+
+<!-- Scripts -->
+<script>
+(function() {
+    // ─── Drag & Drop Upload ───
+    var zone = document.getElementById('upload-zone');
+    var fileInput = document.getElementById('file-input');
+    var form = document.getElementById('upload-form');
+
+    zone.addEventListener('click', function(e) {
+        if (e.target.closest('form') && e.target.type === 'submit') return;
+        fileInput.click();
+    });
+
+    fileInput.addEventListener('change', function() {
+        if (fileInput.files.length) form.submit();
+    });
+
+    ['dragenter', 'dragover'].forEach(function(evt) {
+        zone.addEventListener(evt, function(e) {
+            e.preventDefault();
+            zone.classList.add('drag-over');
+        });
+    });
+
+    ['dragleave', 'drop'].forEach(function(evt) {
+        zone.addEventListener(evt, function(e) {
+            e.preventDefault();
+            zone.classList.remove('drag-over');
+        });
+    });
+
+    zone.addEventListener('drop', function(e) {
+        e.preventDefault();
+        if (e.dataTransfer.files.length) {
+            fileInput.files = e.dataTransfer.files;
+            form.submit();
+        }
+    });
+
+    // ─── View Toggle ───
+    var btnGrid = document.getElementById('btn-grid-view');
+    var btnList = document.getElementById('btn-list-view');
+    var gridView = document.getElementById('grid-view');
+    var listView = document.getElementById('list-view');
+
+    var savedView = localStorage.getItem('pycms-media-view') || 'grid';
+    setView(savedView);
+
+    if (btnGrid && btnList) {
+        btnGrid.addEventListener('click', function() { setView('grid'); });
+        btnList.addEventListener('click', function() { setView('list'); });
+    }
+
+    function setView(mode) {
+        if (!gridView || !listView) return;
+        if (mode === 'list') {
+            gridView.classList.remove('active');
+            listView.classList.add('active');
+            btnList.classList.add('active');
+            btnGrid.classList.remove('active');
+        } else {
+            gridView.classList.add('active');
+            listView.classList.remove('active');
+            btnGrid.classList.add('active');
+            btnList.classList.remove('active');
+        }
+        localStorage.setItem('pycms-media-view', mode);
+    }
+
+    // ─── Search ───
+    var searchInput = document.getElementById('media-search');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            var q = this.value.toLowerCase();
+            document.querySelectorAll('[data-filename]').forEach(function(el) {
+                var match = el.getAttribute('data-filename').indexOf(q) !== -1;
+                el.style.display = match ? '' : 'none';
+            });
+        });
+    }
+})();
+
+// ─── Copy URL ───
+function copyUrl(url) {
+    navigator.clipboard.writeText(url).then(function() {
+        var toast = document.getElementById('copy-toast');
+        toast.classList.add('show');
+        setTimeout(function() { toast.classList.remove('show'); }, 2000);
+    });
+}
+
+// ─── Show Detail Modal ───
+function showDetail(id) {
+    UIkit.modal('#media-detail-' + id).show();
+}
+
+// ─── Selection Support ───
+window.selectImage = function(url) {
+    if (window.opener) {
+        window.opener.postMessage({ mceAction: 'insertImage', url: url }, '*');
+        window.close();
+    }
+};
+</script>
+{% endblock %}
