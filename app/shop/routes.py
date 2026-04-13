@@ -190,6 +190,33 @@ def checkout():
         
         db.session.commit()
         
+        # 3. Email Integration (Postmark)
+        try:
+            from ..utils.email import send_email
+            
+            # Email to Customer
+            customer_subject = f"Order Confirmation #{order.id} - {settings.site_name}"
+            customer_body = f"<h2>Thank you for your order, {name}!</h2>"
+            customer_body += f"<p>We've received your order #{order.id} and will contact you soon for payment.</p>"
+            customer_body += "<h4>Order Summary:</h4><ul>"
+            for k, item in cart.items():
+                opts_str = f" ({', '.join([f'{ok}: {ov}' for ok, ov in item.get('options', {}).items()])})" if item.get('options') else ""
+                customer_body += f"<li>{item['name']} x{item['quantity']}{opts_str} - ${item['price'] * item['quantity']:.2f}</li>"
+            customer_body += f"</ul><p><strong>Total: ${total:.2f}</strong></p>"
+            
+            send_email(customer_subject, email, customer_body)
+            
+            # Email to Admin (if configured)
+            if settings.postmark_sender_email:
+                admin_subject = f"New Order Recieved: #{order.id}"
+                admin_body = f"<h3>New Order from {name}</h3>"
+                admin_body += f"<p>Email: {email}</p><p>Total: ${total:.2f}</p>"
+                admin_body += f"<p><a href='{request.host_url}admin/shop/orders'>View in Dashboard</a></p>"
+                send_email(admin_subject, settings.postmark_sender_email, admin_body)
+        except Exception as e:
+            # Don't fail the whole checkout if email fails, just log it.
+            print(f"Checkout Email Error: {str(e)}")
+
         # Clear cart
         session["cart"] = {}
         session.modified = True
@@ -220,6 +247,17 @@ def register():
         db.session.commit()
         
         login_user(user)
+        
+        # Send Welcome Email
+        try:
+            from ..utils.email import send_email
+            settings = SiteSettings.load()
+            subject = f"Welcome to {settings.site_name}!"
+            body = f"<h2>Welcome, {name or email}!</h2><p>Your account has been successfully created. You can now track your orders and manage your profile.</p>"
+            send_email(subject, email, body)
+        except:
+            pass
+            
         flash("Welcome! Your account has been created.", "success")
         return redirect(url_for("shop.account"))
         
@@ -274,7 +312,9 @@ def admin_products_new():
             image_url=request.form.get("image_url"),
             is_active=bool(request.form.get("is_active")),
             product_type=request.form.get("product_type"),
-            options_json=request.form.get("options_json") or "[]"
+            options_json=request.form.get("options_json") or "[]",
+            meta_description=request.form.get("meta_description"),
+            meta_keywords=request.form.get("meta_keywords")
         )
         db.session.add(p)
         db.session.commit()
@@ -298,6 +338,8 @@ def admin_products_edit(id: int):
         p.is_active = bool(request.form.get("is_active"))
         p.product_type = request.form.get("product_type")
         p.options_json = request.form.get("options_json") or "[]"
+        p.meta_description = request.form.get("meta_description")
+        p.meta_keywords = request.form.get("meta_keywords")
         db.session.commit()
         flash("Product updated.", "success")
         return redirect(url_for("shop.admin_products"))

@@ -10,6 +10,15 @@ class SiteSettings(db.Model):
     active_theme = db.Column(db.String(100), nullable=False, default="default")
     config_json = db.Column(db.Text, nullable=False, default="{}")
     posts_per_page = db.Column(db.Integer, nullable=False, default=10)
+    
+    # Mail Settings (Postmark)
+    postmark_api_token = db.Column(db.String(255), nullable=True)
+    postmark_sender_email = db.Column(db.String(255), nullable=True)
+
+    # SEO & Analytics Settings
+    meta_description = db.Column(db.Text, nullable=True)
+    meta_keywords = db.Column(db.String(500), nullable=True)
+    google_analytics_id = db.Column(db.String(50), nullable=True)
 
     @classmethod
     def load(cls) -> "SiteSettings":

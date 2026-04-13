@@ -1,0 +1,124 @@
+{% extends active_theme + "/templates/layouts/default.html" %}
+
+{% block title %}{{ form.name }} | Form{% endblock %}
+
+{% block content %}
+<div class="uk-section uk-section-default">
+    <div class="uk-container uk-container-small">
+        <h1 class="uk-heading-small uk-text-center uk-margin-large-bottom">{{ form.name }}</h1>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="uk-alert-{{ category }}" uk-alert>
+                  <a class="uk-alert-close" uk-close></a>
+                  <p>{{ message }}</p>
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <div class="uk-card uk-card-default uk-card-body uk-box-shadow-medium uk-border-rounded">
+            <form action="{{ url_for('crm.forms_submit_public', form_id=form.id) }}" method="post" class="uk-form-stacked">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+                <div class="uk-grid-small" uk-grid>
+                {% for f in fields %}
+                {% set w = (f.width | string) if f.width else '6' %}
+                {% set w_cls = '1-1' %}
+                {% if w == '5' %}{% set w_cls = '5-6' %}
+                {% elif w == '4' %}{% set w_cls = '2-3' %}
+                {% elif w == '3' %}{% set w_cls = '1-2' %}
+                {% elif w == '2' %}{% set w_cls = '1-3' %}
+                {% elif w == '1' %}{% set w_cls = '1-6' %}
+                {% endif %}
+                
+                <div class="uk-width-{{ w_cls }}@s">
+                {% if f.type == 'info' %}
+                <div class="uk-margin-medium uk-text-break">
+                    {% if f.label and f.label != 'Info Text Block' %}
+                        <h3 class="uk-h4 uk-margin-small-bottom">{{ f.label }}</h3>
+                    {% endif %}
+                    {% if f.description %}
+                        <div class="uk-text-meta">{{ f.description | safe }}</div>
+                    {% endif %}
+                </div>
+                {% else %}
+                <div class="uk-margin">
+                    <label class="uk-form-label uk-text-bold" for="{{ f.name }}">
+                        {{ f.label }} {% if f.required %}<span class="uk-text-danger">*</span>{% endif %}
+                    </label>
+                    <div class="uk-form-controls">
+                        
+                        {% if f.type == 'textarea' %}
+                            <textarea class="uk-textarea" id="{{ f.name }}" name="{{ f.name }}" rows="5" {{ 'required' if f.required else '' }}></textarea>
+                            
+                        {% elif f.type == 'select' %}
+                            <!-- Split the choices string by comma into an array -->
+                            {% set choices = f.choices.split(',') if f.choices else [] %}
+                            <select class="uk-select" id="{{ f.name }}" name="{{ f.name }}" {{ 'required' if f.required else '' }}>
+                                <option value="">-- Please select --</option>
+                                {% for choice in choices %}
+                                    {% set c = choice | trim %}
+                                    {% if c %}
+                                        <option value="{{ c }}">{{ c }}</option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+
+                        {% elif f.type == 'radio' %}
+                            {% set choices = f.choices.split(',') if f.choices else [] %}
+                            <div class="uk-grid-small uk-child-width-auto uk-grid">
+                            {% for choice in choices %}
+                                {% set c = choice | trim %}
+                                {% if c %}
+                                    <label>
+                                        <input class="uk-radio" type="radio" name="{{ f.name }}" value="{{ c }}" {{ 'required' if f.required else '' }}> 
+                                        {{ c }}
+                                    </label>
+                                {% endif %}
+                            {% endfor %}
+                            </div>
+
+                        {% elif f.type == 'checkbox' %}
+                            {% set choices = f.choices.split(',') if f.choices else [] %}
+                            <div class="uk-grid-small uk-child-width-auto uk-grid">
+                            {% for choice in choices %}
+                                {% set c = choice | trim %}
+                                {% if c %}
+                                    <label>
+                                        <!-- Note: Checkbox groups in forms usually output arrays if they share a name. We map this by appending [] so Flask gathers them -->
+                                        <input class="uk-checkbox" type="checkbox" name="{{ f.name }}[]" value="{{ c }}"> 
+                                        {{ c }}
+                                    </label>
+                                {% endif %}
+                            {% endfor %}
+                            </div>
+                            
+                            <!-- If required, how do we validate a group? Modern HTML5 requires JS. For raw HTML, it's simpler to just let the backend catch it. -->
+
+                        {% else %}
+                            <input class="uk-input" id="{{ f.name }}" name="{{ f.name }}" type="{{ 'tel' if f.type == 'tel' else f.type }}" {{ 'required' if f.required else '' }}>
+                        {% endif %}
+                        
+                        {% if f.description %}
+                        <div class="uk-text-small uk-text-muted uk-margin-small-top">{{ f.description }}</div>
+                        {% endif %}
+
+                    </div>
+                </div>
+                {% endif %}
+                </div>
+                {% endfor %}
+                </div>
+
+                <div class="uk-margin-large-top uk-text-center">
+                    <button type="submit" class="uk-button uk-button-primary uk-button-large uk-width-1-1 uk-width-auto@s">
+                        Submit
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

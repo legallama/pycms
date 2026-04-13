@@ -17,6 +17,8 @@ class Product(db.Model):
     product_type: Mapped[Optional[str]] = mapped_column(db.String(50), default="physical") 
     options_json: Mapped[Optional[str]] = mapped_column(db.Text, default="[]") 
     created_at: Mapped[datetime] = mapped_column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    meta_description: Mapped[Optional[str]] = mapped_column(db.Text, nullable=True)
+    meta_keywords: Mapped[Optional[str]] = mapped_column(db.String(500), nullable=True)
 
 class Order(db.Model):
     __tablename__ = "shop_orders"

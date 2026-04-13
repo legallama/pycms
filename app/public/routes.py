@@ -81,3 +81,62 @@ def page(slug: str):
 def not_found(e):
     return _render_theme("404.html"), 404
 
+
+@public_bp.get("/sitemap.xml")
+def sitemap():
+    """Generate dynamic XML sitemap."""
+    from datetime import datetime
+    from flask import Response, make_response
+    from ..models.shop import Product
+    
+    pages = db.session.execute(db.select(Page).where(Page.status == PublishStatus.PUBLISHED.value)).scalars().all()
+    posts = db.session.execute(db.select(Post).where(Post.status == PublishStatus.PUBLISHED.value)).scalars().all()
+    products = db.session.execute(db.select(Product).where(Product.is_active == True)).scalars().all()
+    
+    base_url = request.host_url.rstrip("/")
+    xml_items = []
+    
+    # Static & Home
+    xml_items.append(f"<url><loc>{base_url}/</loc><priority>1.0</priority></url>")
+    xml_items.append(f"<url><loc>{base_url}/blog</loc><priority>0.8</priority></url>")
+    xml_items.append(f"<url><loc>{base_url}/shop</loc><priority>0.8</priority></url>")
+    
+    for p in pages:
+        xml_items.append(f"<url><loc>{base_url}/{p.slug}</loc><lastmod>{p.updated_at.date()}</lastmod><priority>0.7</priority></url>")
+        
+    for p in posts:
+        xml_items.append(f"<url><loc>{base_url}/blog/{p.slug}</loc><lastmod>{p.updated_at.date()}</lastmod><priority>0.6</priority></url>")
+
+    for p in products:
+        xml_items.append(f"<url><loc>{base_url}/shop/product/{p.slug}</loc><priority>0.6</priority></url>")
+        
+    xml_content = f'<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{"".join(xml_items)}</urlset>'
+    
+    response = make_response(xml_content)
+    response.headers["Content-Type"] = "application/xml"
+    return response
+
+
+@public_bp.get("/robots.txt")
+def robots():
+    """Generate robots.txt."""
+    from flask import make_response
+    content = f"User-agent: *\nAllow: /\nSitemap: {request.host_url}sitemap.xml"
+    response = make_response(content)
+    response.headers["Content-Type"] = "text/plain"
+    return response
+
+
+@public_bp.get("/forms/<int:form_id>")
+def view_form_public(form_id: int):
+    from ..models.crm import Form
+    import json
+    form = db.session.get(Form, form_id)
+    if not form: abort(404)
+    try:
+        fields = json.loads(form.fields_json)
+    except:
+        fields = []
+    
+    # Render standalone form view extending theme base
+    return _render_theme("crm/form.html", form=form, fields=fields)

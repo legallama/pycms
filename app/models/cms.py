@@ -22,6 +22,8 @@ class Page(db.Model):
     updated_at = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
     layout = db.Column(db.String(50), nullable=False, default="default")
     menu_id = db.Column(db.Integer, db.ForeignKey("menus.id"), nullable=True)
+    meta_description = db.Column(db.Text, nullable=True)
+    meta_keywords = db.Column(db.String(500), nullable=True)
 
 
 class Category(db.Model):
@@ -44,4 +46,6 @@ class Post(db.Model):
     created_by_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
     category_id = db.Column(db.Integer, db.ForeignKey("categories.id"), nullable=True, index=True)
     updated_at = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+    meta_description = db.Column(db.Text, nullable=True)
+    meta_keywords = db.Column(db.String(500), nullable=True)
 

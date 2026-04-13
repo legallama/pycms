@@ -74,6 +74,24 @@
         </div>
 
         <div class="uk-margin">
+            <ul uk-accordion="collapsible: true">
+                <li>
+                    <a class="uk-accordion-title" href="#">SEO Settings</a>
+                    <div class="uk-accordion-content">
+                        <div class="uk-margin">
+                            <label class="uk-form-label">Meta Description</label>
+                            <textarea class="uk-textarea" name="meta_description" rows="2" placeholder="Brief description for search engines (150-160 chars)">{{ product.meta_description if product and product.meta_description else '' }}</textarea>
+                        </div>
+                        <div class="uk-margin">
+                            <label class="uk-form-label">Meta Keywords</label>
+                            <input class="uk-input" name="meta_keywords" type="text" value="{{ product.meta_keywords if product and product.meta_keywords else '' }}" placeholder="keyword1, keyword2, keyword3">
+                        </div>
+                    </div>
+                </li>
+            </ul>
+        </div>
+
+        <div class="uk-margin">
             <button class="uk-button uk-button-primary" type="submit">Save Product</button>
             <a class="uk-button uk-button-default" href="{{ url_for('shop.admin_products') }}">Cancel</a>
         </div>

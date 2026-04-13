@@ -3,17 +3,36 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>{% block title %}Home{% endblock %} | pycms</title>
+    <title>{% block title %}Home{% endblock %} | {{ site_settings.site_name }}</title>
+    
+    {% if site_settings.meta_description %}
+    <meta name="description" content="{{ site_settings.meta_description }}">
+    {% endif %}
+    {% if site_settings.meta_keywords %}
+    <meta name="keywords" content="{{ site_settings.meta_keywords }}">
+    {% endif %}
+
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/uikit@3.21.12/dist/css/uikit.min.css" />
     <script defer src="https://cdn.jsdelivr.net/npm/uikit@3.21.12/dist/js/uikit.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/uikit@3.21.12/dist/js/uikit-icons.min.js"></script>
+
+    {% if site_settings.google_analytics_id %}
+    <!-- Google Analytics (GA4) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id={{ site_settings.google_analytics_id }}"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', '{{ site_settings.google_analytics_id }}');
+    </script>
+    {% endif %}
   </head>
   <body>
-    <header class="uk-section uk-section-muted uk-padding-small">
-      <div class="uk-container">
-        <nav class="uk-navbar-container uk-navbar-transparent" uk-navbar>
+    <div uk-sticky="sel-target: .uk-navbar-container; cls-active: uk-navbar-sticky">
+      <nav class="uk-navbar-container" style="background: #f8f8f8;" uk-navbar>
+        <div class="uk-container uk-container-expand">
           <div class="uk-navbar-left">
-            <a class="uk-navbar-item uk-logo" href="/">pycms</a>
+            <a class="uk-navbar-item uk-logo" href="/">{{ site_settings.site_name }}</a>
           </div>
           <div class="uk-navbar-right">
             <ul class="uk-navbar-nav uk-visible@m">
@@ -23,9 +42,9 @@
               <li><a href="/admin/">Admin</a></li>
             </ul>
           </div>
-        </nav>
-      </div>
-    </header>
+        </div>
+      </nav>
+    </div>
 
     <main class="uk-section">
       <div class="uk-container">

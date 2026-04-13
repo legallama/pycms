@@ -63,6 +63,11 @@
             <span class="uk-margin-small-right" uk-icon="users"></span> Contacts
           </a>
         </li>
+        <li class="{{ 'uk-active' if request.endpoint and 'crm.forms' in request.endpoint else '' }}">
+          <a href="{{ url_for('crm.forms_list') }}">
+            <span class="uk-margin-small-right" uk-icon="mail"></span> Forms
+          </a>
+        </li>
 
         <li class="uk-nav-header">Store</li>
         <li class="{{ 'uk-active' if request.endpoint and 'shop.admin_products' in request.endpoint else '' }}">
@@ -75,12 +80,6 @@
             <span class="uk-margin-small-right" uk-icon="table"></span> Orders
           </a>
         </li>
-        <li class="{{ 'uk-active' if request.endpoint == 'shop.admin_settings' else '' }}">
-          <a href="{{ url_for('shop.admin_settings') }}">
-            <span class="uk-margin-small-right" uk-icon="cog"></span> Store Settings
-          </a>
-        </li>
-
         <li class="uk-nav-header">Site</li>
         <li class="{{ 'uk-active' if request.endpoint and 'site.menus' in request.endpoint else '' }}">
           <a href="{{ url_for('site.menus_list') }}">

@@ -5,10 +5,34 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>{% block title %}Home{% endblock %} | {{ site_settings.site_name }}</title>
+
+  {% set seo_desc = (page.meta_description if page is defined and page and page.meta_description else none)
+                 or (post.meta_description if post is defined and post and post.meta_description else none)
+                 or (product.meta_description if product is defined and product and product.meta_description else none)
+                 or site_settings.meta_description %}
+  {% set seo_keys = (page.meta_keywords if page is defined and page and page.meta_keywords else none)
+                 or (post.meta_keywords if post is defined and post and post.meta_keywords else none)
+                 or (product.meta_keywords if product is defined and product and product.meta_keywords else none)
+                 or site_settings.meta_keywords %}
+
+  {% if seo_desc %}<meta name="description" content="{{ seo_desc }}">{% endif %}
+  {% if seo_keys %}<meta name="keywords" content="{{ seo_keys }}">{% endif %}
+
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/uikit@3.21.12/dist/css/uikit.min.css" />
   <link rel="stylesheet" href="/static/theme/css/theme.css" />
   <script defer src="https://cdn.jsdelivr.net/npm/uikit@3.21.12/dist/js/uikit.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/uikit@3.21.12/dist/js/uikit-icons.min.js"></script>
+
+  {% if site_settings.google_analytics_id %}
+  <script async src="https://www.googletagmanager.com/gtag/js?id={{ site_settings.google_analytics_id }}"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', '{{ site_settings.google_analytics_id }}');
+  </script>
+  {% endif %}
+
   {% block head %}{% endblock %}
 </head>
 

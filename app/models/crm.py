@@ -55,3 +55,29 @@ class Task(db.Model):
     status = db.Column(db.String(20), nullable=False, default=TaskStatus.OPEN.value)
     assigned_to_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True, index=True)
 
+
+class Form(db.Model):
+    __tablename__ = "forms"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(255), nullable=False)
+    # List of {label, type, name, required}
+    fields_json = db.Column(db.Text, nullable=False, default="[]") 
+    email_recipient = db.Column(db.String(255), nullable=True) # Send notification to
+    success_message = db.Column(db.String(255), nullable=True, default="Thank you! Your message has been sent.")
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+
+    submissions = db.relationship("FormSubmission", back_populates="form", cascade="all, delete-orphan")
+
+
+class FormSubmission(db.Model):
+    __tablename__ = "form_submissions"
+
+    id = db.Column(db.Integer, primary_key=True)
+    form_id = db.Column(db.Integer, db.ForeignKey("forms.id"), nullable=False, index=True)
+    # JSON of submitted data
+    data_json = db.Column(db.Text, nullable=False) 
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+
+    form = db.relationship("Form", back_populates="submissions")
+

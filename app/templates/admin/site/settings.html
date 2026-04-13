@@ -1,46 +1,160 @@
 {% extends "admin/base.html" %}
 
-{% block title %}General Settings{% endblock %}
-{% block page_title %}General Settings{% endblock %}
+{% block title %}Settings{% endblock %}
+{% block page_title %}System Settings{% endblock %}
 
 {% block content %}
 <div class="uk-card uk-card-default uk-card-body">
+    
+    <ul class="uk-tab" uk-switcher="connect: #settings-switcher; animation: uk-animation-fade">
+        <li><a href="#"><span uk-icon="settings" class="uk-margin-small-right"></span> General</a></li>
+        <li><a href="#"><span uk-icon="cart" class="uk-margin-small-right"></span> Store</a></li>
+        <li><a href="#"><span uk-icon="mail" class="uk-margin-small-right"></span> Mail</a></li>
+        <li><a href="#"><span uk-icon="search" class="uk-margin-small-right"></span> SEO & Analytics</a></li>
+    </ul>
+
     <form method="post">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
         
-        <div class="uk-grid-large" uk-grid>
-            <div class="uk-width-2-3@m">
-                <h3 class="uk-heading-divider">Site Identity</h3>
-                <div class="uk-margin">
-                    <label class="uk-form-label" for="site_name">Site Name</label>
-                    <div class="uk-form-controls">
-                        <input class="uk-input" id="site_name" name="site_name" type="text" value="{{ settings.site_name }}" required>
+        <ul id="settings-switcher" class="uk-switcher uk-margin-large-top">
+            <!-- TAB: GENERAL -->
+            <li>
+                <div class="uk-grid-large" uk-grid>
+                    <div class="uk-width-2-3@m">
+                        <h3 class="uk-heading-divider">Site Identity</h3>
+                        <div class="uk-margin">
+                            <label class="uk-form-label" for="site_name">Site Name</label>
+                            <div class="uk-form-controls">
+                                <input class="uk-input" id="site_name" name="site_name" type="text" value="{{ settings.site_name }}" required>
+                            </div>
+                        </div>
+
+                        <h3 class="uk-heading-divider uk-margin-large-top">Blog Settings</h3>
+                        <div class="uk-margin">
+                            <label class="uk-form-label" for="posts_per_page">Posts Per Page</label>
+                            <div class="uk-form-controls">
+                                <input class="uk-input uk-form-width-small" id="posts_per_page" name="posts_per_page" type="number" value="{{ settings.posts_per_page }}" min="1" max="100" required>
+                                <p class="uk-text-meta">Number of blog posts to show on the main blog index before paginating.</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
+            </li>
 
-                <h3 class="uk-heading-divider uk-margin-large-top">Blog Settings</h3>
-                <div class="uk-margin">
-                    <label class="uk-form-label" for="posts_per_page">Posts Per Page</label>
-                    <div class="uk-form-controls">
-                        <input class="uk-input uk-form-width-small" id="posts_per_page" name="posts_per_page" type="number" value="{{ settings.posts_per_page }}" min="1" max="100" required>
-                        <p class="uk-text-meta">Number of blog posts to show on the main blog index before paginating.</p>
+            <!-- TAB: STORE -->
+            <li>
+                <div class="uk-grid-large" uk-grid>
+                    <div class="uk-width-2-3@m">
+                        <h3 class="uk-heading-divider">Payment Configuration</h3>
+                        
+                        <div class="uk-margin">
+                            <label class="uk-form-label uk-text-bold">Currency</label>
+                            <select class="uk-select" name="currency">
+                                <option value="USD" {{ 'selected' if shop_config.get('currency') == 'USD' else '' }}>USD ($)</option>
+                                <option value="EUR" {{ 'selected' if shop_config.get('currency') == 'EUR' else '' }}>EUR (€)</option>
+                                <option value="GBP" {{ 'selected' if shop_config.get('currency') == 'GBP' else '' }}>GBP (£)</option>
+                            </select>
+                        </div>
+
+                        <div class="uk-margin-large-top">
+                            <h4 class="uk-heading-bullet">Stripe</h4>
+                            <div class="uk-margin">
+                                <label class="uk-form-label">Publishable Key</label>
+                                <input class="uk-input" type="text" name="stripe_publishable_key" value="{{ shop_config.get('stripe_publishable_key', '') }}">
+                            </div>
+                            <div class="uk-margin">
+                                <label class="uk-form-label">Secret Key</label>
+                                <input class="uk-input" type="password" name="stripe_secret_key" value="{{ shop_config.get('stripe_secret_key', '') }}">
+                            </div>
+                        </div>
+
+                        <div class="uk-margin-large-top">
+                            <h4 class="uk-heading-bullet">PayPal</h4>
+                            <div class="uk-margin">
+                                <label class="uk-form-label">Client ID</label>
+                                <input class="uk-input" type="text" name="paypal_client_id" value="{{ shop_config.get('paypal_client_id', '') }}">
+                            </div>
+                        </div>
+
+                        <div class="uk-margin-large-top">
+                            <h4 class="uk-heading-bullet">Paddle</h4>
+                            <div class="uk-margin">
+                                <label class="uk-form-label">Vendor ID</label>
+                                <input class="uk-input" type="text" name="paddle_vendor_id" value="{{ shop_config.get('paddle_vendor_id', '') }}">
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
+            </li>
 
-            <div class="uk-width-1-3@m">
-                <div class="uk-card uk-card-secondary uk-card-body uk-border-rounded">
-                    <h4 class="uk-text-bold"><span uk-icon="info" class="uk-margin-small-right"></span> Site Info</h4>
-                    <ul class="uk-list uk-list-divider uk-text-small">
-                        <li>Active Theme: <strong>{{ settings.active_theme }}</strong></li>
-                        <li>Site URL: <code>{{ request.host_url }}</code></li>
-                    </ul>
+            <!-- TAB: MAIL -->
+            <li>
+                <div class="uk-grid-large" uk-grid>
+                    <div class="uk-width-2-3@m">
+                        <h3 class="uk-heading-divider">Postmark Configuration</h3>
+                        
+                        <div class="uk-margin">
+                            <label class="uk-form-label" for="postmark_api_token">Postmark Server API Token</label>
+                            <div class="uk-form-controls">
+                                <input class="uk-input" id="postmark_api_token" name="postmark_api_token" type="password" value="{{ settings.postmark_api_token or '' }}" placeholder="Enter your Server API Token">
+                                <p class="uk-text-meta">Found in your Postmark Server settings.</p>
+                            </div>
+                        </div>
+                        <div class="uk-margin">
+                            <label class="uk-form-label" for="postmark_sender_email">Sender Email Address</label>
+                            <div class="uk-form-controls">
+                                <input class="uk-input" id="postmark_sender_email" name="postmark_sender_email" type="email" value="{{ settings.postmark_sender_email or '' }}" placeholder="hello@yourdomain.com">
+                                <p class="uk-text-meta">Must be a verified Sender Signature in Postmark.</p>
+                            </div>
+                        </div>
+                        <div class="uk-margin">
+                            <button type="submit" name="action" value="test_email" class="uk-button uk-button-default">
+                                <span uk-icon="mail" class="uk-margin-small-right"></span> Send Test Email
+                            </button>
+                            <p class="uk-text-meta">Sends a test email to the sender address above to verify settings.</p>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
+            </li>
+
+            <!-- TAB: SEO & ANALYTICS -->
+            <li>
+                <div class="uk-grid-large" uk-grid>
+                    <div class="uk-width-2-3@m">
+                        <h3 class="uk-heading-divider">Search Engine Optimization</h3>
+                        
+                        <div class="uk-margin">
+                            <label class="uk-form-label" for="meta_description">Global Meta Description</label>
+                            <div class="uk-form-controls">
+                                <textarea class="uk-textarea" id="meta_description" name="meta_description" rows="3" placeholder="A brief summary of your site for search engines...">{{ settings.meta_description or '' }}</textarea>
+                                <p class="uk-text-meta">Recommended length: 150-160 characters.</p>
+                            </div>
+                        </div>
+
+                        <div class="uk-margin">
+                            <label class="uk-form-label" for="meta_keywords">Global Keywords</label>
+                            <div class="uk-form-controls">
+                                <input class="uk-input" id="meta_keywords" name="meta_keywords" type="text" value="{{ settings.meta_keywords or '' }}" placeholder="cms, shop, crm, etc.">
+                                <p class="uk-text-meta">Comma-separated list of keywords.</p>
+                            </div>
+                        </div>
+
+                        <h3 class="uk-heading-divider uk-margin-large-top">Tracking & Analytics</h3>
+                        
+                        <div class="uk-margin">
+                            <label class="uk-form-label" for="google_analytics_id">Google Analytics Tracking ID (G-XXXXXXX)</label>
+                            <div class="uk-form-controls">
+                                <input class="uk-input" id="google_analytics_id" name="google_analytics_id" type="text" value="{{ settings.google_analytics_id or '' }}" placeholder="G-XXXXXXXXXX">
+                                <p class="uk-text-meta">Enter your Google Analytics 4 (GA4) Measurement ID.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </li>
+        </ul>
 
         <div class="uk-margin-large-top">
-            <button class="uk-button uk-button-primary uk-button-large" type="submit">Save Settings</button>
+            <button class="uk-button uk-button-primary uk-button-large" type="submit">Save All Settings</button>
         </div>
     </form>
 </div>

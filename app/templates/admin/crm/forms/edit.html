@@ -1,0 +1,399 @@
+{% extends "admin/base.html" %}
+
+{% block title %}{{ 'Edit' if form else 'New' }} Form{% endblock %}
+{% block page_title %}{{ 'Edit Form: ' + form.name if form else 'Create New Form' }}{% endblock %}
+
+{% block head %}
+<style>
+    .field-card {
+        border: 1px dashed #ccc;
+        background: var(--bg-card);
+        cursor: grab;
+        transition: all 0.2s ease;
+        user-select: none;
+    }
+    .field-card:hover {
+        border-color: var(--primary);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    }
+    .field-card:active {
+        cursor: grabbing;
+    }
+    .field-instance {
+        cursor: move !important;
+        background: var(--bg-card);
+    }
+    #canvas {
+        min-height: 250px;
+        border: 2px dashed #e2e8f0;
+        border-radius: 8px;
+        padding: 15px;
+        background: var(--bg-body);
+        transition: border-color 0.2s ease;
+        position: relative;
+    }
+    #canvas.drag-over {
+        border-color: var(--primary) !important;
+        background: var(--primary-glow) !important;
+    }
+    #canvas:empty::after {
+        content: "Drag fields from the toolbox and drop them here.";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: var(--text-muted);
+        font-style: italic;
+        pointer-events: none;
+        text-align: center;
+        width: 100%;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<form id="form-builder-form" method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+    <input type="hidden" id="fields_json" name="fields_json" value="{{ form.fields_json if form else '[]' }}">
+
+    <div class="uk-grid-medium" uk-grid>
+        <!-- Sidebar: Field Toolbox -->
+        <div class="uk-width-1-3@m">
+            <div class="uk-card uk-card-default uk-card-body uk-padding-small" uk-sticky="offset: 100; bottom: true">
+                <h4 class="uk-text-bold">Form Configuration</h4>
+                <div class="uk-margin-small">
+                    <label class="uk-form-label">Form Name</label>
+                    <input class="uk-input uk-form-small" name="name" type="text" value="{{ form.name if form else '' }}" required placeholder="e.g. Contact Form">
+                </div>
+                <div class="uk-margin-small">
+                    <label class="uk-form-label">Notification Email</label>
+                    <input class="uk-input uk-form-small" name="email_recipient" type="email" value="{{ form.email_recipient if form else '' }}" placeholder="sales@example.com">
+                </div>
+                <div class="uk-margin-small">
+                    <label class="uk-form-label">Success Message</label>
+                    <input class="uk-input uk-form-small" name="success_message" type="text" value="{{ form.success_message if form else 'Thank you!' }}">
+                </div>
+
+                <hr class="uk-margin-small">
+
+                <h4 class="uk-text-bold">Field Toolbox</h4>
+                <p class="uk-text-meta">Drag fields into the canvas on the right.</p>
+                
+                <div id="toolbox">
+                    <!-- Native HTML5 Draggable elements. Not part of UIkit sortable -->
+                    <div class="field-card uk-padding-small uk-margin-small-bottom" draggable="true" data-type="text">
+                        <span uk-icon="info" class="uk-margin-small-right"></span> Text Input
+                    </div>
+                    <div class="field-card uk-padding-small uk-margin-small-bottom" draggable="true" data-type="email">
+                        <span uk-icon="mail" class="uk-margin-small-right"></span> Email Input
+                    </div>
+                    <div class="field-card uk-padding-small uk-margin-small-bottom" draggable="true" data-type="textarea">
+                        <span uk-icon="file-text" class="uk-margin-small-right"></span> Text Area
+                    </div>
+                    <div class="field-card uk-padding-small uk-margin-small-bottom" draggable="true" data-type="tel">
+                        <span uk-icon="receiver" class="uk-margin-small-right"></span> Phone Number
+                    </div>
+                    <div class="field-card uk-padding-small uk-margin-small-bottom" draggable="true" data-type="number">
+                        <span uk-icon="hashtag" class="uk-margin-small-right"></span> Number
+                    </div>
+                    <!-- New Fields -->
+                    <div class="field-card uk-padding-small uk-margin-small-bottom" draggable="true" data-type="info">
+                        <span uk-icon="quote-right" class="uk-margin-small-right"></span> Info Text Block
+                    </div>
+                    <div class="field-card uk-padding-small uk-margin-small-bottom" draggable="true" data-type="select">
+                        <span uk-icon="chevron-down" class="uk-margin-small-right"></span> Dropdown Select
+                    </div>
+                    <div class="field-card uk-padding-small uk-margin-small-bottom" draggable="true" data-type="radio">
+                        <span uk-icon="nut" class="uk-margin-small-right"></span> Radio Buttons
+                    </div>
+                    <div class="field-card uk-padding-small uk-margin-small-bottom" draggable="true" data-type="checkbox">
+                        <span uk-icon="check" class="uk-margin-small-right"></span> Checkbox List
+                    </div>
+                    <div class="field-card uk-padding-small uk-margin-small-bottom" draggable="true" data-type="date">
+                        <span uk-icon="calendar" class="uk-margin-small-right"></span> Date Picker
+                    </div>
+                </div>
+
+                <div class="uk-margin-top">
+                    <button class="uk-button uk-button-primary uk-width-1-1" type="submit">Save Form</button>
+                    <a href="{{ url_for('crm.forms_list') }}" class="uk-button uk-button-text uk-width-1-1 uk-margin-small-top">Cancel</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main: Form Canvas -->
+        <div class="uk-width-2-3@m">
+            <div class="uk-card uk-card-default uk-card-body">
+                <h3 class="uk-card-title uk-margin-remove">Form Canvas</h3>
+                <p class="uk-text-meta uk-margin-small-bottom">Drag items here, then pull to arrange and edit their properties.</p>
+                
+                <!-- Native drag targets + UIkit sortable for internal sibling reordering only -->
+                <div id="canvas" class="uk-margin-top uk-grid-small" uk-grid uk-sortable="group: canvas-items">
+                    <!-- Fields arrayed here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<!-- Modal: Field Options -->
+<div id="field-modal" uk-modal>
+    <div class="uk-modal-dialog uk-modal-body">
+        <h2 class="uk-modal-title">Field Options</h2>
+        <form id="field-options-form">
+            <div class="uk-margin" id="opt-width-container">
+                <label class="uk-form-label">Field Width</label>
+                <select class="uk-select" id="opt-width">
+                    <option value="6">100% (6/6 columns)</option>
+                    <option value="5">83% (5/6 columns)</option>
+                    <option value="4">66% (4/6 columns)</option>
+                    <option value="3">50% (3/6 columns)</option>
+                    <option value="2">33% (2/6 columns)</option>
+                    <option value="1">16% (1/6 columns)</option>
+                </select>
+                <p class="uk-text-meta">Choose how wide this field displays on the form wrapper.</p>
+            </div>
+            <div class="uk-margin">
+                <label class="uk-form-label">Label</label>
+                <input class="uk-input" type="text" id="opt-label" required placeholder="e.g. Your Name">
+            </div>
+            <div class="uk-margin">
+                <label class="uk-form-label">Field Name (ID)</label>
+                <input class="uk-input" type="text" id="opt-name" required placeholder="e.g. full_name">
+                <p class="uk-text-meta">Used in the CRM and reports. Letters, numbers and underscores only.</p>
+            </div>
+            <div class="uk-margin" id="opt-description-container">
+                <label class="uk-form-label">Description / Text</label>
+                <textarea class="uk-textarea" id="opt-description" rows="3" placeholder="Enter additional context here..."></textarea>
+                <p class="uk-text-meta">For standard input fields, this acts as helper text. For standalone Info Blocks, this is the main text displayed.</p>
+            </div>
+            <div class="uk-margin" id="opt-choices-container" style="display: none;">
+                <label class="uk-form-label">Choices</label>
+                <input class="uk-input" type="text" id="opt-choices" placeholder="Comma separated (e.g. Red,Green,Blue)">
+                <p class="uk-text-meta">Leave empty if not a multi-choice field.</p>
+            </div>
+            <div class="uk-margin">
+                <label>
+                    <input class="uk-checkbox" type="checkbox" id="opt-required"> Required field
+                </label>
+            </div>
+            <div class="uk-margin">
+                <label>
+                    <input class="uk-checkbox" type="checkbox" id="opt-sanitize" checked> Sanitize Input (Strip HTML elements for safety)
+                </label>
+            </div>
+            <div class="uk-margin uk-text-right">
+                <button class="uk-button uk-button-default uk-modal-close" type="button">Cancel</button>
+                <button class="uk-button uk-button-primary" type="submit">Update Field</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const canvas = document.getElementById('canvas');
+    const fieldsInput = document.getElementById('fields_json');
+    const fieldModal = UIkit.modal('#field-modal');
+    const optionsForm = document.getElementById('field-options-form');
+    let currentEditingEl = null;
+
+    // --- HTML5 Drag & Drop Logic for Toolbox to Canvas ---
+    
+    // 1. Hook up the toolbox draggable items
+    document.querySelectorAll('#toolbox .field-card').forEach(card => {
+        card.addEventListener('dragstart', (e) => {
+            // Transfer passing data
+            e.dataTransfer.setData('text/plain', card.dataset.type);
+            e.dataTransfer.effectAllowed = 'copy';
+        });
+    });
+
+    // 2. Setup the Canvas drop target
+    canvas.addEventListener('dragover', (e) => {
+        e.preventDefault(); // Necessary to allow dropping
+        e.dataTransfer.dropEffect = 'copy';
+        canvas.classList.add('drag-over');
+    });
+
+    canvas.addEventListener('dragleave', (e) => {
+        canvas.classList.remove('drag-over');
+    });
+
+    canvas.addEventListener('drop', (e) => {
+        e.preventDefault();
+        canvas.classList.remove('drag-over');
+        
+        const type = e.dataTransfer.getData('text/plain');
+        if (!type) return; // Not a toolbox drag
+        
+        const labelText = {
+            'text': 'Text Input',
+            'email': 'Email Input',
+            'textarea': 'Text Area',
+            'tel': 'Phone Number',
+            'number': 'Number',
+            'select': 'Dropdown Select',
+            'radio': 'Radio Buttons',
+            'checkbox': 'Checkbox List',
+            'date': 'Date Picker',
+            'info': 'Info Text Block'
+        }[type] || 'New Field';
+
+        const data = {
+            type: type,
+            label: labelText,
+            name: type + '_' + Date.now(),
+            required: false,
+            sanitize: true,
+            choices: '',
+            description: '',
+            width: '6'
+        };
+        
+        // Let UIkit finish any internal events if needed, but append immediately
+        addFieldToCanvas(data);
+        serialize();
+    });
+
+    // --- Core Canvas Field Logic --- //
+
+    function init() {
+        try {
+            const fields = JSON.parse(fieldsInput.value || '[]');
+            fields.forEach(f => addFieldToCanvas(f));
+        } catch (e) { console.error("Error parsing fields", e); }
+    }
+
+    function addFieldToCanvas(data) {
+        const widthClassMap = { '6': '1-1', '5': '5-6', '4': '2-3', '3': '1-2', '2': '1-3', '1': '1-6' };
+        const wClass = widthClassMap[data.width || '6'];
+
+        const div = document.createElement('div');
+        div.className = 'field-instance uk-margin-small-bottom uk-width-' + wClass + '@s';
+        div.dataset.type = data.type;
+        div.dataset.label = data.label;
+        div.dataset.name = data.name;
+        div.dataset.required = data.required;
+        div.dataset.sanitize = data.sanitize !== false;
+        div.dataset.choices = data.choices || '';
+        div.dataset.description = data.description || '';
+        div.dataset.width = data.width || '6';
+
+        div.innerHTML = `
+            <div class="uk-card uk-card-default uk-card-body uk-card-small">
+                <div class="uk-flex uk-flex-middle uk-flex-between">
+                    <div>
+                        <span class="uk-text-bold field-label-text">${data.label}</span>
+                        <span class="uk-text-meta uk-margin-small-left">(${data.type}${data.required ? '*' : ''})</span>
+                    </div>
+                    <div class="uk-button-group">
+                        <button type="button" class="uk-button uk-button-text edit-btn" title="Options"><span uk-icon="cog"></span></button>
+                        <button type="button" class="uk-button uk-button-text del-btn uk-text-danger" title="Remove"><span uk-icon="trash"></span></button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        canvas.appendChild(div);
+        
+        // Setup internal field action buttons
+        div.querySelector('.edit-btn').onclick = (e) => {
+            e.stopPropagation();
+            openOptions(div);
+        };
+        div.querySelector('.del-btn').onclick = (e) => {
+            e.stopPropagation();
+            div.remove();
+            serialize();
+        };
+    }
+
+    // Capture UIkit reordering events inside the canvas
+    UIkit.util.on(canvas, 'moved', function() {
+        serialize();
+    });
+
+    // --- Options Modal --- //
+    
+    function openOptions(el) {
+        currentEditingEl = el;
+        document.getElementById('opt-label').value = el.dataset.label;
+        document.getElementById('opt-name').value = el.dataset.name || '';
+        document.getElementById('opt-description').value = el.dataset.description || '';
+        document.getElementById('opt-required').checked = el.dataset.required === 'true';
+        document.getElementById('opt-sanitize').checked = el.dataset.sanitize !== 'false';
+        document.getElementById('opt-width').value = el.dataset.width || '6';
+        
+        const choicesContainer = document.getElementById('opt-choices-container');
+        if (['select', 'radio', 'checkbox'].includes(el.dataset.type)) {
+            choicesContainer.style.display = 'block';
+            document.getElementById('opt-choices').value = el.dataset.choices || '';
+        } else {
+            choicesContainer.style.display = 'none';
+            document.getElementById('opt-choices').value = '';
+        }
+        
+        fieldModal.show();
+    }
+
+    optionsForm.onsubmit = (e) => {
+        e.preventDefault();
+        const label = document.getElementById('opt-label').value;
+        const name = document.getElementById('opt-name').value.replace(/\s+/g, '_').toLowerCase();
+        const req = document.getElementById('opt-required').checked;
+        const sanitize = document.getElementById('opt-sanitize').checked;
+        const choices = document.getElementById('opt-choices').value;
+        const description = document.getElementById('opt-description').value;
+        const width = document.getElementById('opt-width').value;
+
+        currentEditingEl.dataset.label = label;
+        currentEditingEl.dataset.name = name;
+        currentEditingEl.dataset.required = req;
+        currentEditingEl.dataset.sanitize = sanitize;
+        currentEditingEl.dataset.choices = choices;
+        currentEditingEl.dataset.description = description;
+        currentEditingEl.dataset.width = width;
+        
+        // Update width class on the spot
+        const widthClassMap = { '6': '1-1', '5': '5-6', '4': '2-3', '3': '1-2', '2': '1-3', '1': '1-6' };
+        currentEditingEl.className = 'field-instance uk-margin-small-bottom uk-width-' + widthClassMap[width] + '@s';
+        
+        currentEditingEl.querySelector('.field-label-text').innerText = label;
+        currentEditingEl.querySelector('.uk-text-meta').innerText = `(${currentEditingEl.dataset.type}${req ? '*' : ''})`;
+        
+        fieldModal.hide();
+        serialize();
+    };
+
+    // --- Form Serialization --- //
+    
+    function serialize() {
+        const fields = [];
+        canvas.querySelectorAll('.field-instance').forEach(el => {
+            fields.push({
+                type: el.dataset.type,
+                label: el.dataset.label,
+                name: el.dataset.name,
+                required: el.dataset.required === 'true',
+                sanitize: el.dataset.sanitize !== 'false',
+                choices: el.dataset.choices || '',
+                description: el.dataset.description || '',
+                width: el.dataset.width || '6'
+            });
+        });
+        fieldsInput.value = JSON.stringify(fields);
+    }
+
+    document.getElementById('form-builder-form').onsubmit = (e) => {
+        serialize();
+        return true;
+    };
+
+    init();
+});
+</script>
+{% endblock %}

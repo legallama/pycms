@@ -53,6 +53,7 @@
                 <option value="page">Page</option>
                 <option value="post">Post</option>
                 <option value="shop">Shop</option>
+                <option value="form">Form</option>
               </select>
             </div>
             <div class="uk-width-2-3@s" id="wrapper-url">
@@ -78,6 +79,14 @@
                 <div class="uk-alert-primary uk-margin-remove uk-padding-small uk-text-small" uk-alert>
                     <span uk-icon="info" class="uk-margin-small-right"></span> Links to your shop storefront at <code>/shop</code>
                 </div>
+            </div>
+            <div class="uk-width-2-3@s uk-hidden" id="wrapper-form">
+              <select class="uk-select uk-form-small" name="form_id">
+                <option value="">Select form…</option>
+                {% for f in forms %}
+                  <option value="{{ f.id }}">{{ f.name }}</option>
+                {% endfor %}
+              </select>
             </div>
             <div class="uk-width-1-1">
               <button class="uk-button uk-button-primary uk-button-small" type="submit">Add item</button>
@@ -134,7 +143,8 @@
             url: document.getElementById('wrapper-url'),
             page: document.getElementById('wrapper-page'),
             post: document.getElementById('wrapper-post'),
-            shop: document.getElementById('wrapper-shop')
+            shop: document.getElementById('wrapper-shop'),
+            form: document.getElementById('wrapper-form')
         };
 
         typeSelect.addEventListener('change', function() {

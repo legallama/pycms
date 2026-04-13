@@ -17,6 +17,8 @@ class PageForm(FlaskForm):
     )
     layout = SelectField("Template Layout", choices=[], default="default")
     menu_id = SelectField("Assigned Menu", coerce=int, choices=[])
+    meta_description = TextAreaField("Meta Description")
+    meta_keywords = StringField("Meta Keywords")
 
 
 class PostForm(FlaskForm):
@@ -29,3 +31,5 @@ class PostForm(FlaskForm):
         validators=[DataRequired()],
         default=PublishStatus.DRAFT.value,
     )
+    meta_description = TextAreaField("Meta Description")
+    meta_keywords = StringField("Meta Keywords")

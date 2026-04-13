@@ -1,0 +1,45 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Submissions: {{ form.name }}{% endblock %}
+{% block page_title %}Submissions for {{ form.name }}{% endblock %}
+
+{% block content %}
+<div class="uk-margin">
+    <a href="{{ url_for('crm.forms_list') }}" class="uk-button uk-button-default">
+        <span uk-icon="arrow-left" class="uk-margin-small-right"></span> Back to Forms
+    </a>
+</div>
+
+<div class="uk-card uk-card-default">
+    <div class="uk-card-body">
+        <table class="uk-table uk-table-divider uk-table-hover uk-table-middle uk-text-small">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Data</th>
+                    <th class="uk-table-shrink">ID</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sub in submissions %}
+                <tr>
+                    <td class="uk-text-nowrap uk-text-muted">{{ sub.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>
+                        <ul class="uk-list uk-margin-remove">
+                            {% for label, val in sub.data.items() %}
+                            <li><strong>{{ label }}:</strong> {{ val }}</li>
+                            {% endfor %}
+                        </ul>
+                    </td>
+                    <td><code class="uk-text-muted">{{ sub.id }}</code></td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="3" class="uk-text-center uk-text-muted">No submissions found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

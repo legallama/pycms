@@ -20,15 +20,52 @@ site_bp = Blueprint("site", __name__, template_folder="../templates")
 @require_roles(UserRole.ADMIN)
 def site_settings():
     settings = SiteSettings.load()
+    try:
+        shop_config = json.loads(settings.config_json or "{}")
+    except:
+        shop_config = {}
+
     if request.method == "POST":
         settings.site_name = (request.form.get("site_name") or "PageCraft").strip()
         settings.posts_per_page = int(request.form.get("posts_per_page") or 10)
         
+        # Postmark settings
+        settings.postmark_api_token = request.form.get("postmark_api_token")
+        settings.postmark_sender_email = request.form.get("postmark_sender_email")
+        
+        # Shop Settings (inside config_json)
+        shop_config["currency"] = request.form.get("currency") or "USD"
+        shop_config["stripe_publishable_key"] = request.form.get("stripe_publishable_key")
+        shop_config["stripe_secret_key"] = request.form.get("stripe_secret_key")
+        shop_config["paypal_client_id"] = request.form.get("paypal_client_id")
+        shop_config["paddle_vendor_id"] = request.form.get("paddle_vendor_id")
+        
+        # SEO & Analytics settings
+        settings.meta_description = request.form.get("meta_description")
+        settings.meta_keywords = request.form.get("meta_keywords")
+        settings.google_analytics_id = request.form.get("google_analytics_id")
+        
+        settings.config_json = json.dumps(shop_config)
         db.session.commit()
-        flash("Settings updated.", "success")
+        
+        if request.form.get("action") == "test_email":
+            from ..utils.email import send_email
+            success = send_email(
+                subject="PageCraft - Test Email",
+                to_email=settings.postmark_sender_email,
+                html_body="<h3>Success!</h3><p>Your Postmark configuration is working correctly.</p>",
+                text_body="Success! Your Postmark configuration is working correctly."
+            )
+            if success:
+                flash("Test email sent successfully!", "success")
+            else:
+                flash("Failed to send test email. Check your settings and logs.", "danger")
+        else:
+            flash("Settings updated.", "success")
+            
         return redirect(url_for("site.site_settings"))
         
-    return render_template("admin/site/settings.html", settings=settings)
+    return render_template("admin/site/settings.html", settings=settings, shop_config=shop_config)
 
 
 @site_bp.get("/menus")
@@ -75,7 +112,9 @@ def menus_edit(menu_id: int):
     )
     pages = db.session.execute(db.select(Page).order_by(Page.title.asc())).scalars().all()
     posts = db.session.execute(db.select(Post).order_by(Post.title.asc())).scalars().all()
-    return render_template("admin/menus/edit.html", menu=menu, items=items, pages=pages, posts=posts)
+    from ..models.crm import Form
+    forms = db.session.execute(db.select(Form).order_by(Form.name.asc())).scalars().all()
+    return render_template("admin/menus/edit.html", menu=menu, items=items, pages=pages, posts=posts, forms=forms)
 
 
 @site_bp.post("/menus/<int:menu_id>/items/new")
@@ -95,6 +134,7 @@ def menu_items_new(menu_id: int):
     url = (request.form.get("url") or "").strip()
     page_slug = (request.form.get("page_slug") or "").strip()
     post_slug = (request.form.get("post_slug") or "").strip()
+    form_id = request.form.get("form_id")
     icon = (request.form.get("icon") or "").strip()
 
     if item_type == "url":
@@ -113,6 +153,11 @@ def menu_items_new(menu_id: int):
         url = f"/blog/{post_slug}"
     elif item_type == "shop":
         url = "/shop"
+    elif item_type == "form":
+        if not form_id:
+            flash("Pick a form.", "danger")
+            return redirect(url_for("site.menus_edit", menu_id=menu.id))
+        url = f"/forms/{form_id}"
     else:
         flash("Invalid menu item type.", "danger")
         return redirect(url_for("site.menus_edit", menu_id=menu.id))

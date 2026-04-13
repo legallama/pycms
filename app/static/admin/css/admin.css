@@ -651,3 +651,61 @@ code {
 .uk-alert-close, .uk-close {
     color: var(--text-muted) !important;
 }
+
+/* ═══════════════════════════════════════
+   Accordion Styling
+   ═══════════════════════════════════════ */
+.uk-accordion-title {
+    color: var(--text-heading) !important;
+    font-size: 1rem !important;
+    font-weight: 600 !important;
+    padding: 12px 16px !important;
+    background: var(--bg-main) !important;
+    border: 1px solid var(--border-default) !important;
+    border-radius: 8px !important;
+    transition: all 0.2s ease !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+.uk-accordion-title:hover {
+    background: var(--bg-elevated) !important;
+    color: var(--primary) !important;
+}
+
+.uk-accordion-title::before {
+    background-image: none !important;
+    content: "\e900"; /* UIkit chevron down icon if available, but let's use a simpler approach */
+    font-family: 'uikit-icons';
+    margin-right: 10px;
+}
+
+.uk-accordion-content {
+    padding: 16px !important;
+    border: 1px solid var(--border-default) !important;
+    border-top: none !important;
+    border-bottom-left-radius: 8px !important;
+    border-bottom-right-radius: 8px !important;
+    margin-top: 0 !important;
+}
+
+/* ═══════════════════════════════════════
+   Modals & Icons Styling
+   ═══════════════════════════════════════ */
+.uk-modal-dialog {
+    background: var(--bg-card) !important;
+    color: var(--text-primary) !important;
+    border-radius: 16px !important;
+}
+
+.uk-modal-title {
+    color: var(--text-heading) !important;
+}
+
+.uk-icon-button, .uk-button-text[uk-icon], .uk-button-text > span[uk-icon] {
+    color: var(--text-primary);
+}
+
+.uk-button-text:hover[uk-icon], .uk-button-text:hover > span[uk-icon] {
+    color: var(--primary);
+}

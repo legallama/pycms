@@ -1,0 +1,51 @@
+{% extends "admin/base.html" %}
+
+{% block title %}CRM Forms{% endblock %}
+{% block page_title %}Form Builder{% endblock %}
+
+{% block content %}
+<div class="uk-margin">
+    <a href="{{ url_for('crm.forms_edit') }}" class="uk-button uk-button-primary">
+        <span uk-icon="plus" class="uk-margin-small-right"></span> Create New Form
+    </a>
+</div>
+
+<div class="uk-card uk-card-default">
+    <div class="uk-card-body">
+        <table class="uk-table uk-table-divider uk-table-hover uk-table-middle">
+            <thead>
+                <tr>
+                    <th>Form Name</th>
+                    <th>Email Recipient</th>
+                    <th>Submissions</th>
+                    <th class="uk-table-shrink">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for form in forms %}
+                <tr>
+                    <td class="uk-text-bold">{{ form.name }}</td>
+                    <td>{{ form.email_recipient or '—' }}</td>
+                    <td>
+                        <a href="{{ url_for('crm.form_submissions_list', form_id=form.id) }}" class="uk-badge">
+                            {{ form.submissions|length }}
+                        </a>
+                    </td>
+                    <td class="uk-text-nowrap">
+                        <a href="{{ url_for('crm.forms_edit', form_id=form.id) }}" class="uk-icon-button uk-button-primary" uk-icon="pencil" title="Edit Form"></a>
+                        <form action="{{ url_for('crm.forms_delete', form_id=form.id) }}" method="post" class="uk-display-inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                            <button type="submit" class="uk-icon-button uk-button-danger" uk-icon="trash" onclick="return confirm('Delete this form and all submissions?')"></button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" class="uk-text-center uk-text-muted">No forms created yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -73,6 +73,8 @@ def pages_new():
                 published_at=(datetime.now(timezone.utc) if status == PublishStatus.PUBLISHED.value else None),
                 created_by_id=current_user.id,
                 updated_at=datetime.now(timezone.utc),
+                meta_description=form.meta_description.data,
+                meta_keywords=form.meta_keywords.data,
             )
             db.session.add(page)
             db.session.commit()
@@ -121,6 +123,8 @@ def pages_edit(page_id: int):
                     datetime.now(timezone.utc) if page.status == PublishStatus.PUBLISHED.value else None
                 )
             page.updated_at = datetime.now(timezone.utc)
+            page.meta_description = form.meta_description.data
+            page.meta_keywords = form.meta_keywords.data
             db.session.commit()
             flash("Page updated.", "success")
             return redirect(url_for("cms.pages_list"))
@@ -170,6 +174,8 @@ def posts_new():
                 published_at=(datetime.now(timezone.utc) if status == PublishStatus.PUBLISHED.value else None),
                 created_by_id=current_user.id,
                 updated_at=datetime.now(timezone.utc),
+                meta_description=form.meta_description.data,
+                meta_keywords=form.meta_keywords.data,
             )
             db.session.add(post)
             db.session.commit()
@@ -208,6 +214,8 @@ def posts_edit(post_id: int):
                     datetime.now(timezone.utc) if post.status == PublishStatus.PUBLISHED.value else None
                 )
             post.updated_at = datetime.now(timezone.utc)
+            post.meta_description = form.meta_description.data
+            post.meta_keywords = form.meta_keywords.data
             db.session.commit()
             flash("Post updated.", "success")
             return redirect(url_for("cms.posts_list"))

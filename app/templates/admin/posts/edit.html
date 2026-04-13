@@ -76,6 +76,28 @@
         </div>
       </div>
 
+      <div class="uk-margin">
+        <ul uk-accordion="collapsible: true">
+          <li>
+            <a class="uk-accordion-title" href="#">SEO Settings</a>
+            <div class="uk-accordion-content">
+              <div class="uk-margin">
+                <label class="uk-form-label" for="meta_description">Meta Description</label>
+                <div class="uk-form-controls">
+                  {{ form.meta_description(class_="uk-textarea", id="meta_description", rows="2", placeholder="Brief description for search engines (150-160 chars)") }}
+                </div>
+              </div>
+              <div class="uk-margin">
+                <label class="uk-form-label" for="meta_keywords">Meta Keywords</label>
+                <div class="uk-form-controls">
+                  {{ form.meta_keywords(class_="uk-input", id="meta_keywords", placeholder="keyword1, keyword2, keyword3") }}
+                </div>
+              </div>
+            </div>
+          </li>
+        </ul>
+      </div>
+
       <div class="uk-margin uk-flex uk-flex-between">
         <a class="uk-button uk-button-default" href="{{ url_for('cms.posts_list') }}">Back</a>
         <button class="uk-button uk-button-primary" type="submit">Save</button>
