@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from typing import Union
 from collections.abc import Callable
 from functools import wraps
 
@@ -9,7 +10,7 @@ from flask_login import current_user
 from .models.user import UserRole
 
 
-def require_roles(*roles: UserRole | str) -> Callable:
+def require_roles(*roles: Union[UserRole, str]) -> Callable:
     allowed = {r.value if isinstance(r, UserRole) else str(r) for r in roles}
 
     def decorator(fn: Callable) -> Callable:

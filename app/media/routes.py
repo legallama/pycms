@@ -4,6 +4,8 @@ import os
 import secrets
 from pathlib import Path
 
+from typing import Optional
+
 from flask import Blueprint, abort, current_app, flash, redirect, render_template, request, send_from_directory, url_for
 from flask_login import login_required
 from PIL import Image
@@ -18,9 +20,9 @@ from ..models.user import UserRole
 media_bp = Blueprint("media", __name__, template_folder="../templates")
 
 ALLOWED_IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".gif", ".webp"}
-ALLOWED_OTHER_EXTS = {".pdf"}
+ALLOWED_OTHER_EXTS = {".pdf", ".mp4", ".mov", ".webm"}
 ALLOWED_EXTS = ALLOWED_IMAGE_EXTS | ALLOWED_OTHER_EXTS
-MAX_UPLOAD_BYTES = 15 * 1024 * 1024
+MAX_UPLOAD_BYTES = 100 * 1024 * 1024
 
 
 def _format_size(size_bytes: int) -> str:
@@ -56,7 +58,7 @@ def _ext(filename: str) -> str:
     return Path(filename).suffix.lower()
 
 
-def _save_upload(fs: FileStorage) -> tuple[str, str, int, int | None, int | None]:
+def _save_upload(fs: FileStorage) -> tuple[str, str, int, Optional[int], Optional[int]]:
     if not fs or not fs.filename:
         raise ValueError("Missing file")
     filename = secure_filename(fs.filename)

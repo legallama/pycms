@@ -1,0 +1,97 @@
+{% extends active_theme + "/templates/base.html" %}
+
+{% block title %}Your Cart{% endblock %}
+
+{% block content %}
+<div class="uk-section">
+    <h1 class="uk-heading-small">Shopping Cart</h1>
+
+    {% if cart %}
+    <form action="{{ url_for('shop.cart_update') }}" method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <div>
+            <table class="uk-table uk-table-middle uk-table-hover">
+                <thead>
+                    <tr>
+                        <th class="uk-table-shrink">Product</th>
+                        <th></th>
+                        <th>Price</th>
+                        <th class="uk-table-shrink">Quantity</th>
+                        <th class="uk-table-shrink">Subtotal</th>
+                        <th class="uk-table-shrink"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item_key, item in cart.items() %}
+                    <tr>
+                        <td>
+                            {% if item.image_url %}
+                            <img src="{{ item.image_url }}" width="80" class="uk-border-rounded">
+                            {% else %}
+                            <div class="uk-background-muted" style="width: 80px; height: 80px;"></div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ url_for('shop.product_detail', slug=item.slug) }}" class="uk-link-reset uk-text-bold">
+                                {{ item.name }}
+                            </a>
+                            {% if item.options %}
+                            <div class="uk-text-meta">
+                                {% for key, val in item.options.items() %}
+                                <span>{{ key }}: {{ val }}</span>{% if not loop.last %}, {% endif %}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </td>
+                        <td class="uk-text-nowrap">${{ "%.2f"|format(item.price) }}</td>
+                        <td>
+                            <input class="uk-input uk-form-width-xsmall" type="number" name="qty_{{ item_key }}" value="{{ item.quantity }}" min="0">
+                        </td>
+                        <td class="uk-text-nowrap uk-text-bold">${{ "%.2f"|format(item.price * item.quantity) }}</td>
+                        <td class="uk-padding-remove">
+                            <a href="javascript:void(0)" onclick="document.getElementById('remove-form-{{ item_key | slugify }}').submit()" 
+                               class="uk-text-danger" 
+                               data-uk-icon="icon: trash; ratio: 1.4" 
+                               style="color: #f0506e !important; text-decoration: none; padding: 0; display: inline-block;" 
+                               title="Remove Item">
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="uk-grid-small uk-margin-top" uk-grid>
+            <div class="uk-width-expand">
+                <button type="submit" class="uk-button uk-button-default">Update Cart</button>
+            </div>
+            <div class="uk-width-large@s uk-text-right">
+                <div class="uk-card uk-card-default uk-card-body">
+                    <div class="uk-flex uk-flex-between">
+                        <span class="uk-text-large">Total:</span>
+                        <span class="uk-text-large uk-text-bold">${{ "%.2f"|format(total) }}</span>
+                    </div>
+                    <div class="uk-margin-top">
+                        <a href="{{ url_for('shop.checkout') }}" class="uk-button uk-button-primary uk-button-large uk-width-1-1">Proceed to Checkout</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    {% for item_key, item in cart.items() %}
+    <form id="remove-form-{{ item_key | slugify }}" action="{{ url_for('shop.cart_remove', cart_key=item_key) }}" method="post" style="display:none">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+    </form>
+    {% endfor %}
+
+    {% else %}
+    <div class="uk-placeholder uk-text-center">
+        <div uk-icon="icon: cart; ratio: 2" class="uk-text-muted"></div>
+        <p>Your cart is empty.</p>
+        <a href="{{ url_for('shop.index') }}" class="uk-button uk-button-primary">Go to Shop</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,62 @@
+{% extends active_theme + "/templates/base.html" %}
+
+{% block title %}{{ product.name }}{% endblock %}
+
+{% block content %}
+<div class="uk-section">
+    <div class="uk-grid-large" uk-grid>
+        <div class="uk-width-1-2@m">
+            {% if product.image_url %}
+                <img src="{{ product.image_url }}" alt="{{ product.name }}" class="uk-border-rounded">
+            {% else %}
+                <div class="uk-background-muted uk-height-large uk-flex uk-flex-center uk-flex-middle">
+                    <span uk-icon="icon: image; ratio: 5" class="uk-text-muted"></span>
+                </div>
+            {% endif %}
+        </div>
+        <div class="uk-width-1-2@m">
+            <h1 class="uk-heading-small">{{ product.name }}</h1>
+            <p class="uk-text-large uk-text-bold uk-margin-small-top">${{ "%.2f"|format(product.price) }}</p>
+            
+            <div class="uk-margin-medium-top">
+                {{ product.description | safe }}
+            </div>
+
+            <div class="uk-margin-large-top">
+                <form action="{{ url_for('shop.cart_add', product_id=product.id) }}" method="post">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    
+                    {% if product.options_json and product.options_json != '[]' %}
+                    <div class="uk-grid-small uk-child-width-1-2@s" uk-grid>
+                        {% for opt in product.options_json | from_json %}
+                        <div>
+                            <label class="uk-form-label uk-text-bold">{{ opt.name }}</label>
+                            <select class="uk-select uk-form-small" name="option_{{ opt.name | slugify }}">
+                                {% for val in opt['values'] %}
+                                <option value="{{ val }}">{{ val }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <hr class="uk-margin-small">
+                    {% endif %}
+
+                    <button type="submit" class="uk-button uk-button-primary uk-button-large uk-width-1-1">Add to Cart</button>
+                </form>
+            </div>
+            
+            <div class="uk-margin-small-top uk-flex uk-flex-middle">
+                <span class="uk-margin-small-right" uk-icon="check"></span>
+                <span class="uk-text-meta">{{ product.inventory }} in stock</span>
+            </div>
+            
+            <hr class="uk-margin-medium">
+            <div class="uk-grid-small uk-child-width-auto" uk-grid>
+                <div><span uk-icon="icon: credit-card" title="Secure Payment"></span></div>
+                <div><span uk-icon="icon: world" title="Fast Shipping"></span></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

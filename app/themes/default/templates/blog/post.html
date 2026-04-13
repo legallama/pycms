@@ -1,4 +1,4 @@
-{% extends "default/templates/layouts/default.html" %}
+{% extends active_theme + "/templates/layouts/default.html" %}
 
 {% block title %}{{ post.title }}{% endblock %}
 
@@ -9,7 +9,7 @@
         Updated {{ post.updated_at.strftime('%B %d, %Y') }}
     </p>
     <div class="uk-margin-large-top">
-        {{ post.body_html | safe }}
+        {{ post.body_html | shortcodes }}
     </div>
 </article>
 <hr class="uk-margin-large">

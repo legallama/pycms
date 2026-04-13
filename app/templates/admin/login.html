@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Login | pycms</title>
+    <title>Login | PageCraft</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/uikit@3.21.12/dist/css/uikit.min.css" />
     <link rel="stylesheet" href="{{ url_for('static', filename='admin/css/admin.css') }}" />
     <script defer src="https://cdn.jsdelivr.net/npm/uikit@3.21.12/dist/js/uikit.min.js"></script>
@@ -11,7 +11,7 @@
     <!-- Apply saved theme instantly to prevent flash -->
     <script>
       (function() {
-        var t = localStorage.getItem('pycms-theme') || 'light';
+        var t = localStorage.getItem('pagecraft-theme') || 'light';
         document.documentElement.setAttribute('data-theme', t);
       })();
     </script>
@@ -27,7 +27,7 @@
     </div>
 
     <div class="uk-flex uk-flex-middle uk-flex-center login-wrapper">
-      <div class="uk-width-medium uk-padding fade-in">
+      <div class="uk-width-large@s uk-padding fade-in">
         <div class="uk-text-center uk-margin-medium-bottom">
             <div class="login-icon uk-margin-small-bottom" uk-icon="icon: rocket; ratio: 2"></div>
             <h2 class="uk-text-bold uk-margin-small-top uk-margin-remove-bottom">Welcome back</h2>
@@ -92,7 +92,7 @@
           var current = html.getAttribute('data-theme') || 'light';
           var next = current === 'dark' ? 'light' : 'dark';
           html.setAttribute('data-theme', next);
-          localStorage.setItem('pycms-theme', next);
+          localStorage.setItem('pagecraft-theme', next);
         });
       })();
     </script>

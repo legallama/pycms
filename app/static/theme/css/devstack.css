@@ -1,0 +1,157 @@
+/*
+ * Devstack Inspired Theme CSS
+ * Deep dark mode with vivid gradients and glassmorphism UI features
+ */
+
+:root {
+    --devstack-bg: #09090c;
+    --devstack-card: rgba(255, 255, 255, 0.03);
+    --devstack-border: rgba(255, 255, 255, 0.08);
+    --devstack-gradient: linear-gradient(135deg, #12c2e9, #c471ed, #f64f59);
+    --devstack-primary: #c471ed;
+}
+
+body {
+    background-color: var(--devstack-bg);
+    color: #e2e8f0;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+}
+
+h1, h2, h3, h4, h5, h6, .uk-h1, .uk-h2, .uk-h3, .uk-h4, .uk-h5, .uk-h6, .uk-heading-small, .uk-heading-medium, .uk-heading-large {
+    color: #ffffff;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+/* Gradient Text Component */
+.devstack-gradient-text {
+    background: var(--devstack-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: inline-block;
+}
+
+/* Custom UIkit Overrides for Devstack */
+.uk-card-default,
+.uk-card-primary,
+.uk-card-secondary {
+    background: var(--devstack-card);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--devstack-border);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    color: #cbd5e1;
+}
+
+.uk-card-title {
+    color: #ffffff;
+}
+
+/* Base UIkit colors */
+.uk-navbar-container {
+    background: rgba(9, 9, 12, 0.75);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--devstack-border);
+}
+
+.uk-navbar-nav>li>a {
+    color: #94a3b8;
+    text-transform: none;
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+.uk-navbar-nav>li:hover>a,
+.uk-navbar-nav>li.uk-active>a {
+    color: #ffffff;
+}
+
+.uk-logo {
+    font-weight: 800;
+    letter-spacing: -0.05em;
+    font-size: 1.5rem;
+    background: var(--devstack-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.uk-button-primary {
+    background: var(--devstack-gradient);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.uk-button-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(196, 113, 237, 0.4);
+    background: var(--devstack-gradient);
+}
+
+.uk-button-default {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #fff;
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+.uk-button-default:hover {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #fff;
+}
+
+/* Modals & Dropdowns */
+.uk-navbar-dropdown, .uk-dropdown {
+    background: #1e1e24;
+    border: 1px solid var(--devstack-border);
+    border-radius: 12px;
+}
+.uk-nav-default>li>a.uk-active,
+.uk-nav-default>li>a:hover {
+    color: var(--devstack-primary);
+}
+
+/* Input Fields */
+.uk-input, .uk-select, .uk-textarea {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border-radius: 6px;
+}
+.uk-input:focus, .uk-select:focus, .uk-textarea:focus {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--devstack-primary);
+    color: #fff;
+}
+
+/* Utilities */
+.uk-section {
+    position: relative;
+    z-index: 1;
+}
+
+.uk-text-muted {
+    color: #94a3b8 !important;
+}
+
+.uk-accordion-title {
+    color: #fff;
+}
+
+/* Devstack Accents */
+.devstack-glow {
+    position: absolute;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, rgba(0, 0, 0, 0) 70%);
+    top: -200px;
+    left: -200px;
+    z-index: 0;
+    pointer-events: none;
+}

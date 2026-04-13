@@ -1,0 +1,61 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Products{% endblock %}
+{% block page_title %}Products{% endblock %}
+
+{% block content %}
+  <div class="uk-card uk-card-default uk-card-body">
+    <div class="uk-flex uk-flex-between uk-flex-middle">
+      <h3 class="uk-card-title uk-margin-remove">Products</h3>
+      <a class="uk-button uk-button-primary uk-button-small" href="{{ url_for('shop.admin_products_new') }}">New product</a>
+    </div>
+
+    <div class="uk-overflow-auto uk-margin">
+      <table class="uk-table uk-table-divider uk-table-small uk-table-middle">
+        <thead>
+          <tr>
+            <th class="uk-table-shrink">Image</th>
+            <th>Name</th>
+            <th>Slug</th>
+            <th>Price</th>
+            <th>Inventory</th>
+            <th>Active</th>
+            <th class="uk-table-shrink"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in products %}
+            <tr>
+              <td>
+                {% if p.image_url %}
+                  <img src="{{ p.image_url }}" width="40" height="40" style="object-fit: cover; border-radius: 4px;">
+                {% else %}
+                  <div class="uk-background-muted" style="width: 40px; height: 40px; border-radius: 4px;"></div>
+                {% endif %}
+              </td>
+              <td class="uk-text-bold">{{ p.name }}</td>
+              <td><code>{{ p.slug }}</code></td>
+              <td>${{ "%.2f"|format(p.price) }}</td>
+              <td>{{ p.inventory }}</td>
+              <td>
+                {% if p.is_active %}
+                  <span class="uk-label uk-label-success">Yes</span>
+                {% else %}
+                  <span class="uk-label uk-label-danger">No</span>
+                {% endif %}
+              </td>
+              <td>
+                <a class="uk-button uk-button-default uk-button-small" href="{{ url_for('shop.admin_products_edit', id=p.id) }}">Edit</a>
+              </td>
+            </tr>
+          {% endfor %}
+          {% if not products %}
+            <tr>
+              <td colspan="7" class="uk-text-center uk-text-muted">No products found.</td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endblock %}

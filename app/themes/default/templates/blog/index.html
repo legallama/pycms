@@ -1,25 +1,89 @@
-{% extends "default/templates/layouts/default.html" %}
+{% extends active_theme + "/templates/base.html" %}
 
 {% block title %}Blog{% endblock %}
 
 {% block content %}
-<h1 class="uk-heading-small">Recent Posts</h1>
-<hr class="uk-divider-small">
+<div class="blog-header uk-margin-large-bottom">
+    <h1 class="uk-heading-medium">Latest Updates</h1>
+    <p class="uk-text-lead uk-text-muted">Stay informed with the latest news, tutorials, and community insights.</p>
+</div>
 
-{% for post in posts %}
-<article class="uk-article uk-margin-large-bottom">
-    <h2 class="uk-article-title"><a class="uk-link-reset" href="/blog/{{ post.slug }}">{{ post.title }}</a></h2>
-    <p class="uk-article-meta">
-        Published on {{ post.published_at.strftime('%B %d, %Y') if post.published_at else 'Draft' }}
-    </p>
-    <p>{{ post.body_html | striptags | truncate(300) }}</p>
-    <div class="uk-grid-small uk-child-width-auto" uk-grid>
-        <div>
-            <a class="uk-button uk-button-text" href="/blog/{{ post.slug }}">Read more</a>
-        </div>
+<div class="uk-grid-medium uk-child-width-1-2@m" uk-grid uk-height-match="target: > div > .tm-blog-card">
+    {% for post in pagination.items %}
+    <div>
+        <article class="uk-article uk-card uk-card-default uk-card-body uk-border-rounded uk-box-shadow-small uk-box-shadow-hover-medium tm-blog-card">
+            <div class="uk-article-meta uk-margin-small-bottom">
+                <span uk-icon="icon: calendar; ratio: 0.8" class="uk-margin-small-right"></span>
+                {{ (post.published_at or post.updated_at).strftime('%B %d, %Y') }}
+            </div>
+            
+            <h2 class="uk-article-title uk-margin-small-top">
+                <a class="uk-link-reset" href="{{ url_for('public.blog_post', slug=post.slug) }}">{{ post.title }}</a>
+            </h2>
+
+            <div class="uk-margin">
+                {# Strip HTML tags and truncate for excerpt #}
+                <p class="uk-text-muted">
+                    {{ post.body_html | striptags | truncate(280) }}
+                </p>
+            </div>
+
+            <div class="uk-flex uk-flex-middle uk-flex-between uk-margin-top">
+                <a href="{{ url_for('public.blog_post', slug=post.slug) }}" class="uk-button uk-button-text uk-text-bold">
+                    Read More <span uk-icon="arrow-right" class="uk-margin-small-left"></span>
+                </a>
+            </div>
+        </article>
     </div>
-</article>
-{% else %}
-<p>No posts found.</p>
-{% endfor %}
+    {% else %}
+    <div class="uk-text-center uk-margin-large-top">
+        <div uk-icon="icon: ghost; ratio: 3" class="uk-text-muted"></div>
+        <h3 class="uk-margin-small-top">No posts found.</h3>
+        <p class="uk-text-muted">Check back later for more updates!</p>
+    </div>
+    {% endfor %}
+</div>
+
+{# ─── Pagination ─── #}
+{% if pagination.pages > 1 %}
+<ul class="uk-pagination uk-flex-center uk-margin-large-top">
+    {% if pagination.has_prev %}
+    <li><a href="{{ url_for('public.blog_index', page=pagination.prev_num) }}"><span uk-pagination-previous></span> Previous</a></li>
+    {% else %}
+    <li class="uk-disabled"><span uk-pagination-previous></span> Previous</li>
+    {% endif %}
+
+    {% for page in pagination.iter_pages() %}
+    {% if page %}
+        {% if page != pagination.page %}
+        <li><a href="{{ url_for('public.blog_index', page=page) }}">{{ page }}</a></li>
+        {% else %}
+        <li class="uk-active"><span>{{ page }}</span></li>
+        {% endif %}
+    {% else %}
+        <li><span>...</span></li>
+    {% endif %}
+    {% endfor %}
+
+    {% if pagination.has_next %}
+    <li><a href="{{ url_for('public.blog_index', page=pagination.next_num) }}">Next <span uk-pagination-next></span></a></li>
+    {% else %}
+    <li class="uk-disabled">Next <span uk-pagination-next></span></li>
+    {% endif %}
+</ul>
+{% endif %}
+
+<style>
+.tm-blog-card {
+    transition: all 0.3s ease;
+    border: 1px solid var(--border-default, #e5e5e5);
+}
+.tm-blog-card:hover {
+    transform: translateY(-4px);
+    border-color: #1e87f0;
+}
+.tm-blog-card .uk-article-title a:hover {
+    color: #1e87f0;
+}
+</style>
 {% endblock %}

@@ -9,9 +9,13 @@ from .media.routes import media_bp
 from .site.routes import site_bp
 from .modules.routes import modules_bp
 from .crm.routes import crm_bp
+from .shop.routes import shop_bp
 
 
-def create_app(config_object: type[Config] | None = None) -> Flask:
+from typing import Optional
+from flask import session
+
+def create_app(config_object: Optional[type[Config]] = None) -> Flask:
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_object(config_object or Config)
 
@@ -65,6 +69,16 @@ def create_app(config_object: type[Config] | None = None) -> Flask:
     app.register_blueprint(site_bp, url_prefix="/admin")
     app.register_blueprint(modules_bp, url_prefix="/admin")
     app.register_blueprint(crm_bp, url_prefix="/admin")
+    app.register_blueprint(shop_bp)
+
+    @app.context_processor
+    def inject_cart():
+        try:
+            cart = session.get("cart", {})
+            count = sum(item.get("quantity", 0) for item in cart.values())
+        except:
+            count = 0
+        return dict(cart_count=count)
 
     with app.app_context():
         from .models.navigation import Menu

@@ -4,4 +4,5 @@ from .media import MediaFile  # noqa: F401
 from .navigation import Menu, MenuItem, Module  # noqa: F401
 from .crm import Contact, Lead, LeadNote, Task  # noqa: F401
 from .site_settings import SiteSettings  # noqa: F401
+from .shop import Product, Order  # noqa: F401
 

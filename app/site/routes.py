@@ -11,7 +11,24 @@ from ..models.navigation import Menu, MenuItem
 from ..models.user import UserRole
 from ..templating import get_theme, get_positions, get_layouts, list_themes
 
+from ..models.site_settings import SiteSettings
 site_bp = Blueprint("site", __name__, template_folder="../templates")
+
+
+@site_bp.route("/settings", methods=["GET", "POST"])
+@login_required
+@require_roles(UserRole.ADMIN)
+def site_settings():
+    settings = SiteSettings.load()
+    if request.method == "POST":
+        settings.site_name = (request.form.get("site_name") or "PageCraft").strip()
+        settings.posts_per_page = int(request.form.get("posts_per_page") or 10)
+        
+        db.session.commit()
+        flash("Settings updated.", "success")
+        return redirect(url_for("site.site_settings"))
+        
+    return render_template("admin/site/settings.html", settings=settings)
 
 
 @site_bp.get("/menus")
@@ -94,6 +111,8 @@ def menu_items_new(menu_id: int):
             flash("Pick a post.", "danger")
             return redirect(url_for("site.menus_edit", menu_id=menu.id))
         url = f"/blog/{post_slug}"
+    elif item_type == "shop":
+        url = "/shop"
     else:
         flash("Invalid menu item type.", "danger")
         return redirect(url_for("site.menus_edit", menu_id=menu.id))

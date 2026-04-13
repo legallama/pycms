@@ -50,17 +50,24 @@
                     </div>
                 </div>
 
-                <div class="uk-margin">
-                    <label class="uk-form-label uk-text-bold">Status</label>
-                    <div class="uk-form-controls">
-                        <label><input class="uk-checkbox" type="checkbox" name="enabled" {{ 'checked' if (module.enabled if module else True) else '' }}> Enabled</label>
+                <div class="uk-grid-small uk-margin" uk-grid>
+                    <div class="uk-width-1-3@s">
+                        <label class="uk-form-label uk-text-bold">Status</label>
+                        <div class="uk-form-controls uk-margin-small-top">
+                            <label><input class="uk-checkbox" type="checkbox" name="enabled" {{ 'checked' if (module.enabled if module else True) else '' }}> Enabled</label>
+                        </div>
                     </div>
-                </div>
-
-                <div class="uk-margin">
-                    <label class="uk-form-label uk-text-bold">Custom CSS Class</label>
-                    <div class="uk-form-controls">
-                        <input class="uk-input" type="text" name="css_class" value="{{ module.css_class if module else '' }}" placeholder="optional classes">
+                    <div class="uk-width-1-3@s">
+                        <label class="uk-form-label uk-text-bold" uk-tooltip="Lower numbers appear first">Display Order</label>
+                        <div class="uk-form-controls">
+                            <input class="uk-input" type="number" name="order" value="{{ module.order if module else '' }}" placeholder="Auto (Last)">
+                        </div>
+                    </div>
+                    <div class="uk-width-1-3@s">
+                        <label class="uk-form-label uk-text-bold">Custom CSS Class</label>
+                        <div class="uk-form-controls">
+                            <input class="uk-input" type="text" name="css_class" value="{{ module.css_class if module else '' }}" placeholder="optional classes">
+                        </div>
                     </div>
                 </div>
 
@@ -110,6 +117,11 @@
                     <!-- Search Config -->
                     <div class="module-config uk-hidden" data-type="search">
                         <p class="uk-text-meta">Simple site search input.</p>
+                    </div>
+
+                    <!-- Breadcrumbs Config -->
+                    <div class="module-config uk-hidden" data-type="breadcrumbs">
+                        <p class="uk-text-meta">Automatically displays a hierarchical navigation path based on the current URL.</p>
                     </div>
 
                     <!-- Hero Config -->
@@ -180,6 +192,376 @@
                                     <option value="primary" {{ 'selected' if (not config or config.get('btn_style') == 'primary') else '' }}>Primary</option>
                                     <option value="secondary" {{ 'selected' if config and config.get('btn_style') == 'secondary' else '' }}>Secondary</option>
                                 </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card Config -->
+                    <div class="module-config uk-hidden" data-type="card">
+                        <div class="uk-card uk-card-default uk-card-body uk-margin-small">
+                            <h4 class="uk-card-title">Card Grid Settings</h4>
+                            <div class="uk-grid-small uk-child-width-1-3@s" uk-grid>
+                                <div>
+                                    <label class="uk-form-label">Grid Columns</label>
+                                    <select class="uk-select" name="card_grid_cols">
+                                        <option value="1-1" {{ 'selected' if config and config.get('grid_cols') == '1-1' else '' }}>1 Column</option>
+                                        <option value="1-2" {{ 'selected' if config and config.get('grid_cols') == '1-2' else '' }}>2 Columns</option>
+                                        <option value="1-3" {{ 'selected' if not config or config.get('grid_cols') == '1-3' else '' }}>3 Columns</option>
+                                        <option value="1-4" {{ 'selected' if config and config.get('grid_cols') == '1-4' else '' }}>4 Columns</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="uk-form-label">Grid Gap</label>
+                                    <select class="uk-select" name="card_grid_gap">
+                                        <option value="small" {{ 'selected' if config and config.get('grid_gap') == 'small' else '' }}>Small</option>
+                                        <option value="medium" {{ 'selected' if not config or config.get('grid_gap') == 'medium' else '' }}>Medium</option>
+                                        <option value="large" {{ 'selected' if config and config.get('grid_gap') == 'large' else '' }}>Large</option>
+                                        <option value="collapse" {{ 'selected' if config and config.get('grid_gap') == 'collapse' else '' }}>Collapse</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="uk-form-label"><br></label>
+                                    <label><input class="uk-checkbox" type="checkbox" name="card_match_height" {{ 'checked' if not config or config.get('match_height', True) else '' }}> Match Heights</label>
+                                </div>
+                            </div>
+                            
+                            <hr>
+                            <h4 class="uk-text-muted uk-text-uppercase">Cards</h4>
+                            <div id="cards-container">
+                                {% set card_items = config.get('items', [config] if config and ('title' in config or 'content' in config) else []) if (config and module and module.type == 'card') else [] %}
+                                {% for item in card_items %}
+                                <div class="card-item uk-background-muted uk-padding-small uk-margin-small uk-position-relative">
+                                    <a class="uk-position-top-right uk-padding-small uk-text-danger" onclick="this.parentElement.remove()" uk-icon="trash" style="cursor: pointer;"></a>
+                                    
+                                    <div class="uk-grid-small" uk-grid>
+                                        <div class="uk-width-1-2@s">
+                                            <label class="uk-form-label uk-text-bold">Title</label>
+                                            <input class="uk-input uk-form-small" type="text" name="card_title[]" value="{{ item.title or '' }}">
+                                        </div>
+                                        <div class="uk-width-1-2@s">
+                                            <label class="uk-form-label uk-text-bold">Badge Text</label>
+                                            <input class="uk-input uk-form-small" type="text" name="card_badge[]" value="{{ item.badge or '' }}">
+                                        </div>
+                                        
+                                        <div class="uk-width-1-1">
+                                            <label class="uk-form-label uk-text-bold">Body Content</label>
+                                            <textarea class="uk-textarea uk-form-small" name="card_content[]" rows="2">{{ item.content or '' }}</textarea>
+                                        </div>
+                                        
+                                        <div class="uk-width-1-2@s">
+                                            <label class="uk-form-label uk-text-bold">Footer Content</label>
+                                            <input class="uk-input uk-form-small" type="text" name="card_footer[]" value="{{ item.footer or '' }}">
+                                        </div>
+                                        <div class="uk-width-1-2@s">
+                                            <label class="uk-form-label uk-text-bold">Link (entire card)</label>
+                                            <input class="uk-input uk-form-small" type="text" name="card_link[]" value="{{ item.link or '' }}">
+                                        </div>
+                                        
+                                        <div class="uk-width-1-4@s">
+                                            <label class="uk-form-label uk-text-bold">Style</label>
+                                            <select class="uk-select uk-form-small" name="card_style[]">
+                                                <option value="default" {{ 'selected' if item.style == 'default' else '' }}>Default</option>
+                                                <option value="primary" {{ 'selected' if item.style == 'primary' else '' }}>Primary</option>
+                                                <option value="secondary" {{ 'selected' if item.style == 'secondary' else '' }}>Secondary</option>
+                                                <option value="hover" {{ 'selected' if item.style == 'hover' else '' }}>Hover Only</option>
+                                            </select>
+                                        </div>
+                                        <div class="uk-width-1-4@s">
+                                            <label class="uk-form-label uk-text-bold">Size</label>
+                                            <select class="uk-select uk-form-small" name="card_size[]">
+                                                <option value="standard" {{ 'selected' if item.size == 'standard' or not item.size else '' }}>Std</option>
+                                                <option value="small" {{ 'selected' if item.size == 'small' else '' }}>Small</option>
+                                                <option value="large" {{ 'selected' if item.size == 'large' else '' }}>Large</option>
+                                            </select>
+                                        </div>
+                                        <div class="uk-width-1-4@s">
+                                            <label class="uk-form-label uk-text-bold">Image URL</label>
+                                            <div class="uk-flex">
+                                                <input class="uk-input uk-form-small" type="text" name="card_image[]" value="{{ item.image or '' }}">
+                                                <button type="button" class="uk-button uk-button-default uk-button-small px-1" onclick="currentCardImgInput=this.previousElementSibling; openMediaPicker('card')">...</button>
+                                            </div>
+                                        </div>
+                                        <div class="uk-width-1-4@s">
+                                            <label class="uk-form-label uk-text-bold">Image Pos</label>
+                                            <select class="uk-select uk-form-small" name="card_image_pos[]">
+                                                <option value="top" {{ 'selected' if item.image_pos == 'top' or not item.image_pos else '' }}>Top</option>
+                                                <option value="bottom" {{ 'selected' if item.image_pos == 'bottom' else '' }}>Bottom</option>
+                                                <option value="left" {{ 'selected' if item.image_pos == 'left' else '' }}>Left</option>
+                                                <option value="right" {{ 'selected' if item.image_pos == 'right' else '' }}>Right</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <button type="button" class="uk-button uk-button-default uk-button-small uk-width-1-1 uk-margin-small" onclick="addCard()">+ Add Card</button>
+                        </div>
+                    </div>
+
+
+
+                    <!-- Accordion Config -->
+                    <div class="module-config uk-hidden" data-type="accordion">
+                        <div class="uk-grid-small" uk-grid>
+                            <div class="uk-width-1-2@s">
+                                <label><input class="uk-checkbox" type="checkbox" name="accordion_collapsible" {{ 'checked' if config and config.get('collapsible', True) else 'checked' }}> Collapsible</label>
+                            </div>
+                            <div class="uk-width-1-2@s">
+                                <label><input class="uk-checkbox" type="checkbox" name="accordion_multiple" {{ 'checked' if config and config.get('multiple') else '' }}> Allow Multiple Open</label>
+                            </div>
+                        </div>
+                        <div class="uk-margin small">
+                            <label class="uk-form-label uk-text-bold">Anim Duration (ms)</label>
+                            <input class="uk-input" type="number" name="accordion_duration" value="{{ config.get('duration', 200) if config else 200 }}">
+                        </div>
+                        <hr>
+                        <h4 class="uk-text-muted uk-text-uppercase">Accordion Items</h4>
+                        <div id="accordion-items-container">
+                            {% set acc_items = config.get('items', []) if (config and module and module.type == 'accordion') else [] %}
+                            {% for item in acc_items %}
+                            <div class="accordion-item uk-background-muted uk-padding-small uk-margin-small uk-position-relative">
+                                <a class="uk-position-top-right uk-padding-small uk-text-danger" onclick="this.parentElement.remove()" uk-icon="trash"></a>
+                                <div class="uk-margin-small">
+                                    <label class="uk-form-label uk-text-bold">Title</label>
+                                    <input class="uk-input uk-form-small" type="text" name="acc_title[]" value="{{ item.title }}">
+                                </div>
+                                <div class="uk-margin-small">
+                                    <label class="uk-form-label uk-text-bold">Content</label>
+                                    <textarea class="uk-textarea uk-form-small" name="acc_content[]" rows="3">{{ item.content }}</textarea>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <button type="button" class="uk-button uk-button-default uk-button-small uk-width-1-1" onclick="addAccordionItem()">+ Add Accordion Item</button>
+                    </div>
+
+                    <!-- Slideshow Config -->
+                    <div class="module-config uk-hidden" data-type="slideshow">
+                        <div class="uk-grid-small" uk-grid>
+                            <div class="uk-width-1-2@s">
+                                <label class="uk-form-label uk-text-bold">Animation</label>
+                                <select class="uk-select" name="slideshow_animation">
+                                    <option value="slide" {{ 'selected' if config and config.get('animation') == 'slide' else '' }}>Slide</option>
+                                    <option value="fade" {{ 'selected' if config and config.get('animation') == 'fade' else '' }}>Fade</option>
+                                    <option value="scale" {{ 'selected' if config and config.get('animation') == 'scale' else '' }}>Scale</option>
+                                    <option value="pull" {{ 'selected' if config and config.get('animation') == 'pull' else '' }}>Pull</option>
+                                    <option value="push" {{ 'selected' if config and config.get('animation') == 'push' else '' }}>Push</option>
+                                </select>
+                            </div>
+                            <div class="uk-width-1-2@s">
+                                <label class="uk-form-label uk-text-bold">Ratio</label>
+                                <input class="uk-input" type="text" name="slideshow_ratio" value="{{ config.get('ratio', '16:9') if config else '16:9' }}" placeholder="16:9">
+                            </div>
+                        </div>
+                        <div class="uk-grid-small uk-margin-small" uk-grid>
+                            <div class="uk-width-1-3@s">
+                                <label><input class="uk-checkbox" type="checkbox" name="slideshow_autoplay" {{ 'checked' if config and config.get('autoplay') else '' }}> Autoplay</label>
+                            </div>
+                            <div class="uk-width-2-3@s">
+                                <input class="uk-input uk-form-small" type="number" name="slideshow_interval" value="{{ config.get('interval', 3000) if config else 3000 }}" placeholder="Interval (ms)">
+                            </div>
+                        </div>
+                        <hr>
+                        <h4 class="uk-text-muted uk-text-uppercase">Slideshow Slides</h4>
+                        <div id="slideshow-slides-container">
+                            {% set ss_items = config.get('items', []) if (config and module and module.type == 'slideshow') else [] %}
+                            {% for s in ss_items %}
+                            <div class="slideshow-item uk-background-muted uk-padding-small uk-margin-small uk-position-relative">
+                                <a class="uk-position-top-right uk-padding-small uk-text-danger" onclick="this.parentElement.remove()" uk-icon="trash"></a>
+                                <div class="uk-grid-small" uk-grid>
+                                    <div class="uk-width-1-2@s">
+                                        <label class="uk-form-label">Image URL</label>
+                                        <div class="uk-flex">
+                                            <input class="uk-input uk-form-small" type="text" name="ss_img[]" value="{{ s.image }}">
+                                            <button type="button" class="uk-button uk-button-default uk-button-small" onclick="currentSSInput=this.previousElementSibling; openMediaPicker('ss')">...</button>
+                                        </div>
+                                    </div>
+                                    <div class="uk-width-1-2@s">
+                                        <label class="uk-form-label">Title</label>
+                                        <input class="uk-input uk-form-small" type="text" name="ss_title[]" value="{{ s.title }}">
+                                    </div>
+                                    <div class="uk-width-1-1">
+                                        <label class="uk-form-label">Caption</label>
+                                        <input class="uk-input uk-form-small" type="text" name="ss_caption[]" value="{{ s.caption }}">
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <button type="button" class="uk-button uk-button-default uk-button-small uk-width-1-1" onclick="addSlideshowSlide()">+ Add Slide</button>
+                    </div>
+
+                    <!-- Parallax Config -->
+                    <div class="module-config uk-hidden" data-type="parallax">
+                        <div class="uk-margin small">
+                            <label class="uk-form-label uk-text-bold">Background Image</label>
+                            <div class="uk-flex">
+                                <input class="uk-input" type="text" name="parallax_image" id="parallax-image-url" value="{{ config.get('image', '') if config else '' }}" placeholder="https://...">
+                                <button type="button" class="uk-button uk-button-default" onclick="currentParallaxImgInput=this.previousElementSibling; openMediaPicker('parallax')">Browse</button>
+                            </div>
+                        </div>
+                        <div class="uk-margin small">
+                            <label class="uk-form-label uk-text-bold">Body Content (HTML/Shortcodes permitted)</label>
+                            <textarea class="uk-textarea" name="parallax_content" rows="4">{{ config.get('content', '') if config else '' }}</textarea>
+                        </div>
+                        <div class="uk-grid-small" uk-grid>
+                            <div class="uk-width-1-3@s">
+                                <label class="uk-form-label uk-text-bold">Height</label>
+                                <select class="uk-select" name="parallax_height">
+                                    <option value="viewport" {{ 'selected' if config and config.get('height') == 'viewport' else '' }}>100vh (Viewport)</option>
+                                    <option value="large" {{ 'selected' if not config or config.get('height') == 'large' else '' }}>Large</option>
+                                    <option value="xlarge" {{ 'selected' if config and config.get('height') == 'xlarge' else '' }}>X-Large</option>
+                                    <option value="medium" {{ 'selected' if config and config.get('height') == 'medium' else '' }}>Medium</option>
+                                </select>
+                            </div>
+                            <div class="uk-width-1-3@s">
+                                <label class="uk-form-label uk-text-bold">Overlay Color</label>
+                                <input class="uk-input" type="color" name="parallax_overlay_color" value="{{ config.get('overlay_color', '#000000') if config else '#000000' }}">
+                            </div>
+                            <div class="uk-width-1-3@s">
+                                <label class="uk-form-label uk-text-bold">Overlay Opacity</label>
+                                <input class="uk-input" type="number" step="0.1" name="parallax_overlay_opacity" value="{{ config.get('overlay_opacity', '0.5') if config else '0.5' }}" min="0" max="1">
+                            </div>
+                            <div class="uk-width-1-2@s">
+                                <label class="uk-form-label uk-text-bold">Background Parallax Effect</label>
+                                <input class="uk-input" type="text" name="parallax_bg_effect" value="{{ config.get('bg_effect', 'bgy: -200') if config else 'bgy: -200' }}">
+                            </div>
+                            <div class="uk-width-1-2@s">
+                                <label class="uk-form-label uk-text-bold">Text Parallax Effect</label>
+                                <input class="uk-input" type="text" name="parallax_text_effect" value="{{ config.get('text_effect', 'opacity: 0,1; y: 100,0; viewport: 0.5') if config else 'opacity: 0,1; y: 100,0; viewport: 0.5' }}">
+                            </div>
+                            <div class="uk-width-1-1">
+                                <label><input class="uk-checkbox" type="checkbox" name="parallax_fixed" {{ 'checked' if config and config.get('fixed') else '' }}> Use CSS Fixed Background Instead of Matrix Parallax</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Countdown Config -->
+                    <div class="module-config uk-hidden" data-type="countdown">
+                        <div class="uk-grid-small" uk-grid>
+                            <div class="uk-width-1-2@s">
+                                <label class="uk-form-label uk-text-bold">Target Date and Time</label>
+                                <input class="uk-input" type="datetime-local" name="cd_date" value="{{ config.get('date', '') if config else '' }}">
+                            </div>
+                            <div class="uk-width-1-2@s">
+                                <label class="uk-form-label uk-text-bold">Number Size</label>
+                                <select class="uk-select" name="cd_size">
+                                    <option value="default" {{ 'selected' if not config or config.get('size') == 'default' else '' }}>Default</option>
+                                    <option value="small" {{ 'selected' if config and config.get('size') == 'small' else '' }}>Small</option>
+                                    <option value="large" {{ 'selected' if config and config.get('size') == 'large' else '' }}>Large</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="uk-grid-small uk-margin" uk-grid>
+                            <div class="uk-width-1-2@s">
+                                <label><input class="uk-checkbox" type="checkbox" name="cd_labels" {{ 'checked' if config and config.get('labels') else '' }}> Show Labels (Days, Hours, Minutes, Seconds)</label>
+                            </div>
+                            <div class="uk-width-1-2@s">
+                                <label><input class="uk-checkbox" type="checkbox" name="cd_separators" {{ 'checked' if config and config.get('separators') else '' }}> Show Separator Colons (:)</label>
+                            </div>
+                        </div>
+                        <div class="uk-margin small">
+                            <label class="uk-form-label uk-text-bold">Intro Content (Above Countdown)</label>
+                            <textarea class="uk-textarea" name="cd_intro" rows="2" placeholder="e.g. Sale ends in:">{{ config.get('intro', '') if config else '' }}</textarea>
+                        </div>
+                        <div class="uk-margin small">
+                            <label class="uk-form-label uk-text-bold">Outro/Expired Content (Shows when timer hits zero)</label>
+                            <textarea class="uk-textarea" name="cd_outro" rows="2" placeholder="e.g. The sale has ended!">{{ config.get('outro', '') if config else '' }}</textarea>
+                        </div>
+                    </div>
+
+                    <!-- Mega Footer Config -->
+                    <div class="module-config uk-hidden" data-type="footer">
+                        <ul class="uk-subnav uk-subnav-pill" uk-switcher>
+                            <li><a href="#">Brand & Info</a></li>
+                            <li><a href="#">Columns</a></li>
+                            <li><a href="#">Newsletter</a></li>
+                            <li><a href="#">Social & Copyright</a></li>
+                        </ul>
+                        <ul class="uk-switcher uk-margin">
+                            <!-- Brand & Info -->
+                            <li>
+                                <div class="uk-margin">
+                                    <label class="uk-form-label uk-text-bold">Brand Name / Logo Text</label>
+                                    <input class="uk-input" type="text" name="ft_logo_text" value="{{ config.get('logo_text', '') if config else '' }}" placeholder="Devstack">
+                                </div>
+                                <div class="uk-margin">
+                                    <label class="uk-form-label uk-text-bold">Company Description</label>
+                                    <textarea class="uk-textarea" name="ft_description" rows="3">{{ config.get('description', '') if config else '' }}</textarea>
+                                </div>
+                            </li>
+                            <!-- Columns -->
+                            <li>
+                                <div class="uk-grid-small" uk-grid>
+                                    <div class="uk-width-1-2@s">
+                                        <label class="uk-form-label uk-text-bold">Column 1 Title</label>
+                                        <input class="uk-input uk-margin-small-bottom" type="text" name="ft_col1_title" value="{{ config.get('col1_title', '') if config else '' }}">
+                                        <label class="uk-form-label uk-text-bold">Column 1 Content (Links DOM)</label>
+                                        <textarea class="uk-textarea" name="ft_col1_html" rows="5" placeholder="<ul class='uk-list'>...</ul>">{{ config.get('col1_html', '') if config else '' }}</textarea>
+                                    </div>
+                                    <div class="uk-width-1-2@s">
+                                        <label class="uk-form-label uk-text-bold">Column 2 Title</label>
+                                        <input class="uk-input uk-margin-small-bottom" type="text" name="ft_col2_title" value="{{ config.get('col2_title', '') if config else '' }}">
+                                        <label class="uk-form-label uk-text-bold">Column 2 Content (Links DOM)</label>
+                                        <textarea class="uk-textarea" name="ft_col2_html" rows="5" placeholder="<ul class='uk-list'>...</ul>">{{ config.get('col2_html', '') if config else '' }}</textarea>
+                                    </div>
+                                </div>
+                            </li>
+                            <!-- Newsletter -->
+                            <li>
+                                <div class="uk-margin">
+                                    <label class="uk-form-label uk-text-bold">Newsletter Title</label>
+                                    <input class="uk-input" type="text" name="ft_newsletter_title" value="{{ config.get('newsletter_title', '') if config else '' }}">
+                                </div>
+                                <div class="uk-margin">
+                                    <label class="uk-form-label uk-text-bold">Newsletter Description</label>
+                                    <textarea class="uk-textarea" name="ft_newsletter_text" rows="2">{{ config.get('newsletter_text', '') if config else '' }}</textarea>
+                                </div>
+                            </li>
+                            <!-- Social & Copyright -->
+                            <li>
+                                <div class="uk-grid-small" uk-grid>
+                                    <div class="uk-width-1-2@s">
+                                        <label class="uk-form-label uk-text-bold">Twitter URL</label>
+                                        <input class="uk-input" type="text" name="ft_twitter" value="{{ config.get('twitter', '') if config else '' }}">
+                                    </div>
+                                    <div class="uk-width-1-2@s">
+                                        <label class="uk-form-label uk-text-bold">GitHub URL</label>
+                                        <input class="uk-input" type="text" name="ft_github" value="{{ config.get('github', '') if config else '' }}">
+                                    </div>
+                                    <div class="uk-width-1-2@s">
+                                        <label class="uk-form-label uk-text-bold">Discord URL</label>
+                                        <input class="uk-input" type="text" name="ft_discord" value="{{ config.get('discord', '') if config else '' }}">
+                                    </div>
+                                    <div class="uk-width-1-1 uk-margin-medium-top">
+                                        <label class="uk-form-label uk-text-bold">Copyright Statement</label>
+                                        <input class="uk-input" type="text" name="ft_copyright" value="{{ config.get('copyright', '') if config else '' }}" placeholder="© 2026 ...">
+                                    </div>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Product Grid Config -->
+                    <div class="module-config uk-hidden" data-type="product_grid">
+                        <div class="uk-grid-small" uk-grid>
+                            <div class="uk-width-1-3@s">
+                                <label class="uk-form-label uk-text-bold">Product Count</label>
+                                <input class="uk-input" type="number" name="pg_count" value="{{ config.get('count', 4) if config else 4 }}">
+                            </div>
+                            <div class="uk-width-1-3@s">
+                                <label class="uk-form-label uk-text-bold">Columns</label>
+                                <select class="uk-select" name="pg_columns">
+                                    <option value="1-2" {{ 'selected' if config and config.get('columns') == '1-2' else '' }}>2 Columns</option>
+                                    <option value="1-3" {{ 'selected' if config and config.get('columns') == '1-3' else '' }}>3 Columns</option>
+                                    <option value="1-4" {{ 'selected' if not config or config.get('columns') == '1-4' else '' }}>4 Columns</option>
+                                </select>
+                            </div>
+                            <div class="uk-width-1-3@s">
+                                <label class="uk-form-label uk-text-bold">Display Settings</label>
+                                <div class="uk-margin-small-top">
+                                    <label><input class="uk-checkbox" type="checkbox" name="pg_show_price" {{ 'checked' if (not config or config.get('show_price', True)) else '' }}> Show Price</label>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -516,7 +898,125 @@
         UIkit.icon(div.querySelector('[uk-icon]'));
     }
 
-    let currentSlideInput = null;
+    var currentSlideInput = null;
+    var currentCardImgInput = null;
+    var currentSSInput = null;
+    var currentParallaxImgInput = null;
+
+    function addCard() {
+        const container = document.getElementById('cards-container');
+        const div = document.createElement('div');
+        div.className = 'card-item uk-background-muted uk-padding-small uk-margin-small uk-position-relative';
+        div.innerHTML = `
+            <a class="uk-position-top-right uk-padding-small uk-text-danger" onclick="this.parentElement.remove()" uk-icon="trash" style="cursor: pointer;"></a>
+            <div class="uk-grid-small" uk-grid>
+                <div class="uk-width-1-2@s">
+                    <label class="uk-form-label uk-text-bold">Title</label>
+                    <input class="uk-input uk-form-small" type="text" name="card_title[]" value="">
+                </div>
+                <div class="uk-width-1-2@s">
+                    <label class="uk-form-label uk-text-bold">Badge Text</label>
+                    <input class="uk-input uk-form-small" type="text" name="card_badge[]" value="">
+                </div>
+                <div class="uk-width-1-1">
+                    <label class="uk-form-label uk-text-bold">Body Content</label>
+                    <textarea class="uk-textarea uk-form-small" name="card_content[]" rows="2"></textarea>
+                </div>
+                <div class="uk-width-1-2@s">
+                    <label class="uk-form-label uk-text-bold">Footer Content</label>
+                    <input class="uk-input uk-form-small" type="text" name="card_footer[]" value="">
+                </div>
+                <div class="uk-width-1-2@s">
+                    <label class="uk-form-label uk-text-bold">Link (entire card)</label>
+                    <input class="uk-input uk-form-small" type="text" name="card_link[]" value="">
+                </div>
+                <div class="uk-width-1-4@s">
+                    <label class="uk-form-label uk-text-bold">Style</label>
+                    <select class="uk-select uk-form-small" name="card_style[]">
+                        <option value="default">Default</option>
+                        <option value="primary">Primary</option>
+                        <option value="secondary">Secondary</option>
+                        <option value="hover">Hover Only</option>
+                    </select>
+                </div>
+                <div class="uk-width-1-4@s">
+                    <label class="uk-form-label uk-text-bold">Size</label>
+                    <select class="uk-select uk-form-small" name="card_size[]">
+                        <option value="standard">Std</option>
+                        <option value="small">Small</option>
+                        <option value="large">Large</option>
+                    </select>
+                </div>
+                <div class="uk-width-1-4@s">
+                    <label class="uk-form-label uk-text-bold">Image URL</label>
+                    <div class="uk-flex">
+                        <input class="uk-input uk-form-small" type="text" name="card_image[]" value="">
+                        <button type="button" class="uk-button uk-button-default uk-button-small px-1" onclick="currentCardImgInput=this.previousElementSibling; openMediaPicker('card')">...</button>
+                    </div>
+                </div>
+                <div class="uk-width-1-4@s">
+                    <label class="uk-form-label uk-text-bold">Image Pos</label>
+                    <select class="uk-select uk-form-small" name="card_image_pos[]">
+                        <option value="top">Top</option>
+                        <option value="bottom">Bottom</option>
+                        <option value="left">Left</option>
+                        <option value="right">Right</option>
+                    </select>
+                </div>
+            </div>
+        `;
+        container.appendChild(div);
+        UIkit.grid(div.querySelector('[uk-grid]'));
+        UIkit.icon(div.querySelector('[uk-icon]'));
+    }
+
+    function addAccordionItem() {
+        const container = document.getElementById('accordion-items-container');
+        const div = document.createElement('div');
+        div.className = 'accordion-item uk-background-muted uk-padding-small uk-margin-small uk-position-relative';
+        div.innerHTML = `
+            <a class="uk-position-top-right uk-padding-small uk-text-danger" onclick="this.parentElement.remove()" uk-icon="trash" style="cursor: pointer;"></a>
+            <div class="uk-margin-small">
+                <label class="uk-form-label uk-text-bold">Title</label>
+                <input class="uk-input uk-form-small" type="text" name="acc_title[]" value="">
+            </div>
+            <div class="uk-margin-small">
+                <label class="uk-form-label uk-text-bold">Content</label>
+                <textarea class="uk-textarea uk-form-small" name="acc_content[]" rows="3"></textarea>
+            </div>
+        `;
+        container.appendChild(div);
+        UIkit.icon(div.querySelector('[uk-icon]'));
+    }
+
+    function addSlideshowSlide() {
+        const container = document.getElementById('slideshow-slides-container');
+        const div = document.createElement('div');
+        div.className = 'slideshow-item uk-background-muted uk-padding-small uk-margin-small uk-position-relative';
+        div.innerHTML = `
+            <a class="uk-position-top-right uk-padding-small uk-text-danger" onclick="this.parentElement.remove()" uk-icon="trash" style="cursor: pointer;"></a>
+            <div class="uk-grid-small" uk-grid>
+                <div class="uk-width-1-2@s">
+                    <label class="uk-form-label">Image URL</label>
+                    <div class="uk-flex">
+                        <input class="uk-input uk-form-small" type="text" name="ss_img[]" value="">
+                        <button type="button" class="uk-button uk-button-default uk-button-small" onclick="currentSSInput=this.previousElementSibling; openMediaPicker('ss')">...</button>
+                    </div>
+                </div>
+                <div class="uk-width-1-2@s">
+                    <label class="uk-form-label">Title</label>
+                    <input class="uk-input uk-form-small" type="text" name="ss_title[]" value="">
+                </div>
+                <div class="uk-width-1-1">
+                    <label class="uk-form-label">Caption</label>
+                    <input class="uk-input uk-form-small" type="text" name="ss_caption[]" value="">
+                </div>
+            </div>
+        `;
+        container.appendChild(div);
+        UIkit.grid(div.querySelector('[uk-grid]'));
+        UIkit.icon(div.querySelector('[uk-icon]'));
+    }
 
     function openMediaPicker(target = 'hero') {
         const width = 1000;
@@ -538,12 +1038,18 @@
         if (event.data.type === 'insertImage' || event.data.mceAction === 'insertImage') {
             if (window.targetPicker === 'slide' && currentSlideInput) {
                 currentSlideInput.value = event.data.url;
+            } else if (window.targetPicker === 'card' && currentCardImgInput) {
+                currentCardImgInput.value = event.data.url;
             } else if (window.targetPicker === 'gallery' && currentGalleryInput) {
                 currentGalleryInput.value = event.data.url;
             } else if (window.targetPicker === 'm_url' && currentMediaUrlInput) {
                 currentMediaUrlInput.value = event.data.url;
             } else if (window.targetPicker === 'm_thumb' && currentMediaThumbInput) {
                 currentMediaThumbInput.value = event.data.url;
+            } else if (window.targetPicker === 'ss' && currentSSInput) {
+                currentSSInput.value = event.data.url;
+            } else if (window.targetPicker === 'parallax' && currentParallaxImgInput) {
+                currentParallaxImgInput.value = event.data.url;
             } else {
                 const heroInput = document.getElementById('hero-image-url');
                 if (heroInput) heroInput.value = event.data.url;

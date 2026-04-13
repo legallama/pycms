@@ -1,0 +1,49 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Orders{% endblock %}
+{% block page_title %}Orders{% endblock %}
+
+{% block content %}
+<div class="uk-card uk-card-default uk-card-body">
+    <h3 class="uk-card-title">Shop Orders</h3>
+    <div class="uk-overflow-auto">
+        <table class="uk-table uk-table-divider uk-table-small">
+            <thead>
+                <tr>
+                    <th>Order ID</th>
+                    <th>Date</th>
+                    <th>Customer</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                    <th>Gateway</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for o in orders %}
+                <tr>
+                    <td>#{{ o.id }}</td>
+                    <td>{{ o.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>{{ o.customer_email }}</td>
+                    <td>${{ "%.2f"|format(o.total_amount) }}</td>
+                    <td>
+                        {% if o.status == 'paid' %}
+                            <span class="uk-label uk-label-success">Paid</span>
+                        {% elif o.status == 'pending' %}
+                            <span class="uk-label uk-label-warning">Pending</span>
+                        {% else %}
+                            <span class="uk-label">{{ o.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ o.payment_gateway or 'Unknown' }}</td>
+                </tr>
+                {% endfor %}
+                {% if not orders %}
+                <tr>
+                    <td colspan="6" class="uk-text-center uk-text-muted uk-padding">No orders yet.</td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

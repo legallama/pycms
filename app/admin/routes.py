@@ -100,3 +100,15 @@ def logout():
     logout_user()
     return redirect(url_for("admin.login"))
 
+@admin_bp.route("/profile", methods=["GET", "POST"])
+@login_required
+def profile():
+    if request.method == "POST":
+        current_user.name = request.form.get("name")
+        current_user.bio = request.form.get("bio")
+        current_user.profile_photo_url = request.form.get("profile_photo_url")
+        db.session.commit()
+        flash("Profile updated.", "success")
+        return redirect(url_for("admin.profile"))
+    return render_template("admin/profile.html")
+

@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>{% block title %}Admin{% endblock %} | pycms</title>
+  <title>{% block title %}Admin{% endblock %} | PageCraft</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/uikit@3.21.12/dist/css/uikit.min.css" />
   <link rel="stylesheet" href="{{ url_for('static', filename='admin/css/admin.css') }}" />
   <script defer src="https://cdn.jsdelivr.net/npm/uikit@3.21.12/dist/js/uikit.min.js"></script>
@@ -12,7 +12,7 @@
   <!-- Apply saved theme instantly to prevent flash -->
   <script>
     (function() {
-      var t = localStorage.getItem('pycms-theme') || 'light';
+      var t = localStorage.getItem('pagecraft-theme') || 'light';
       document.documentElement.setAttribute('data-theme', t);
     })();
   </script>
@@ -23,10 +23,10 @@
   <div class="uk-flex uk-height-viewport">
     <!-- Sidebar -->
     <aside class="uk-visible@m admin-sidebar" style="width: 280px; z-index: 1000;">
-      <div class="sidebar-logo uk-flex uk-flex-middle">
+      <a href="/home" class="sidebar-logo uk-flex uk-flex-middle uk-link-reset" title="View Site">
         <span class="uk-margin-small-right" uk-icon="icon: rocket; ratio: 1.2" style="color: var(--primary)"></span>
-        <div class="sidebar-logo-text">pycms</div>
-      </div>
+        <div class="sidebar-logo-text">PageCraft</div>
+      </a>
 
       <ul class="uk-nav uk-nav-default">
         <li class="{{ 'uk-active' if request.endpoint == 'admin.dashboard' else '' }}">
@@ -64,6 +64,23 @@
           </a>
         </li>
 
+        <li class="uk-nav-header">Store</li>
+        <li class="{{ 'uk-active' if request.endpoint and 'shop.admin_products' in request.endpoint else '' }}">
+          <a href="{{ url_for('shop.admin_products') }}">
+            <span class="uk-margin-small-right" uk-icon="cart"></span> Products
+          </a>
+        </li>
+        <li class="{{ 'uk-active' if request.endpoint and 'shop.admin_orders' in request.endpoint else '' }}">
+          <a href="{{ url_for('shop.admin_orders') }}">
+            <span class="uk-margin-small-right" uk-icon="table"></span> Orders
+          </a>
+        </li>
+        <li class="{{ 'uk-active' if request.endpoint == 'shop.admin_settings' else '' }}">
+          <a href="{{ url_for('shop.admin_settings') }}">
+            <span class="uk-margin-small-right" uk-icon="cog"></span> Store Settings
+          </a>
+        </li>
+
         <li class="uk-nav-header">Site</li>
         <li class="{{ 'uk-active' if request.endpoint and 'site.menus' in request.endpoint else '' }}">
           <a href="{{ url_for('site.menus_list') }}">
@@ -80,6 +97,11 @@
         <li class="{{ 'uk-active' if request.endpoint and 'admin.users' in request.endpoint else '' }}">
           <a href="{{ url_for('admin.users_list') }}">
             <span class="uk-margin-small-right" uk-icon="users"></span> Users
+          </a>
+        </li>
+        <li class="{{ 'uk-active' if request.endpoint == 'site.site_settings' else '' }}">
+          <a href="{{ url_for('site.site_settings') }}">
+            <span class="uk-margin-small-right" uk-icon="settings"></span> General Settings
           </a>
         </li>
         <li class="{{ 'uk-active' if request.endpoint and 'site.themes' in request.endpoint else '' }}">
@@ -118,10 +140,17 @@
           </div>
 
           {% if current_user.is_authenticated %}
-          <div class="uk-navbar-item uk-visible@s">
-            <span class="uk-text-meta uk-margin-small-right">Logged in as</span>
-            <span class="uk-text-bold">{{ current_user.email }}</span>
-          </div>
+          <a class="uk-navbar-item uk-visible@s uk-link-reset" href="{{ url_for('admin.profile') }}">
+            {% if current_user.profile_photo_url %}
+            <img class="uk-border-circle uk-margin-small-right" src="{{ current_user.profile_photo_url }}" width="32" height="32" alt="Avatar" style="object-fit: cover; aspect-ratio: 1/1; border: 1px solid var(--border-default);">
+            {% else %}
+            <div class="uk-icon-button uk-margin-small-right" uk-icon="user" style="width: 32px; height: 32px; min-height: 32px;"></div>
+            {% endif %}
+            <div class="uk-flex uk-flex-column">
+                <span class="uk-text-meta" style="font-size: 0.7rem; line-height: 1;">Logged in as</span>
+                <span class="uk-text-bold" style="font-size: 0.85rem; line-height: 1.2;">{{ current_user.name or current_user.email }}</span>
+            </div>
+          </a>
           <div class="uk-navbar-item">
             <form method="post" action="{{ url_for('admin.logout') }}">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
@@ -154,9 +183,9 @@
   <div id="admin-offcanvas" uk-offcanvas="overlay: true">
     <div class="uk-offcanvas-bar admin-sidebar">
       <button class="uk-offcanvas-close" type="button" uk-close></button>
-      <div class="sidebar-logo uk-flex uk-flex-middle">
-        <div class="sidebar-logo-text">pycms</div>
-      </div>
+      <a href="/home" class="sidebar-logo uk-flex uk-flex-middle uk-link-reset" title="View Site">
+        <div class="sidebar-logo-text">PageCraft</div>
+      </a>
       <ul class="uk-nav uk-nav-default">
         <!-- Same links as desktop sidebar -->
         <li><a href="{{ url_for('admin.dashboard') }}"><span uk-icon="home"></span> Dashboard</a></li>
@@ -167,10 +196,15 @@
         <li class="uk-nav-header">CRM</li>
         <li><a href="{{ url_for('crm.crm_dashboard') }}"><span uk-icon="bolt"></span> Pipeline</a></li>
         <li><a href="{{ url_for('crm.contacts_list') }}"><span uk-icon="users"></span> Contacts</a></li>
+        <li class="uk-nav-header">Store</li>
+        <li><a href="{{ url_for('shop.admin_products') }}"><span uk-icon="cart"></span> Products</a></li>
+        <li><a href="{{ url_for('shop.admin_orders') }}"><span uk-icon="table"></span> Orders</a></li>
+        <li><a href="{{ url_for('shop.admin_settings') }}"><span uk-icon="cog"></span> Store Settings</a></li>
         <li class="uk-nav-header">Site</li>
         <li><a href="{{ url_for('site.menus_list') }}"><span uk-icon="menu"></span> Menus</a></li>
         <li><a href="{{ url_for('modules.modules_list') }}"><span uk-icon="grid"></span> Modules</a></li>
         <li class="uk-nav-header">System</li>
+        <li><a href="{{ url_for('site.site_settings') }}"><span uk-icon="settings"></span> General Settings</a></li>
         <li><a href="{{ url_for('admin.users_list') }}"><span uk-icon="cog"></span> Users</a></li>
       </ul>
     </div>
@@ -187,7 +221,7 @@
         var current = html.getAttribute('data-theme') || 'light';
         var next = current === 'dark' ? 'light' : 'dark';
         html.setAttribute('data-theme', next);
-        localStorage.setItem('pycms-theme', next);
+        localStorage.setItem('pagecraft-theme', next);
       });
     })();
   </script>

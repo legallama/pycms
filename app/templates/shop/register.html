@@ -1,0 +1,32 @@
+{% extends active_theme + "/templates/base.html" %}
+
+{% block title %}Register{% endblock %}
+
+{% block content %}
+<div class="uk-section">
+    <div class="uk-card uk-card-default uk-card-body uk-width-1-2@m uk-align-center">
+        <h2 class="uk-card-title uk-text-center">Create Customer Account</h2>
+        <form method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <div class="uk-margin">
+                <label class="uk-form-label">Full Name</label>
+                <input class="uk-input" type="text" name="name" required>
+            </div>
+            <div class="uk-margin">
+                <label class="uk-form-label">Email Address</label>
+                <input class="uk-input" type="email" name="email" required>
+            </div>
+            <div class="uk-margin">
+                <label class="uk-form-label">Password</label>
+                <input class="uk-input" type="password" name="password" required>
+            </div>
+            <div class="uk-margin">
+                <button type="submit" class="uk-button uk-button-primary uk-width-1-1">Register</button>
+            </div>
+        </form>
+        <div class="uk-text-center uk-margin-top">
+            <p>Already have an account? <a href="{{ url_for('shop.login') }}">Login here</a></p>
+        </div>
+    </div>
+</div>
+{% endblock %}

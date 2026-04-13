@@ -1,0 +1,47 @@
+{% extends "admin/base.html" %}
+
+{% block title %}General Settings{% endblock %}
+{% block page_title %}General Settings{% endblock %}
+
+{% block content %}
+<div class="uk-card uk-card-default uk-card-body">
+    <form method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        
+        <div class="uk-grid-large" uk-grid>
+            <div class="uk-width-2-3@m">
+                <h3 class="uk-heading-divider">Site Identity</h3>
+                <div class="uk-margin">
+                    <label class="uk-form-label" for="site_name">Site Name</label>
+                    <div class="uk-form-controls">
+                        <input class="uk-input" id="site_name" name="site_name" type="text" value="{{ settings.site_name }}" required>
+                    </div>
+                </div>
+
+                <h3 class="uk-heading-divider uk-margin-large-top">Blog Settings</h3>
+                <div class="uk-margin">
+                    <label class="uk-form-label" for="posts_per_page">Posts Per Page</label>
+                    <div class="uk-form-controls">
+                        <input class="uk-input uk-form-width-small" id="posts_per_page" name="posts_per_page" type="number" value="{{ settings.posts_per_page }}" min="1" max="100" required>
+                        <p class="uk-text-meta">Number of blog posts to show on the main blog index before paginating.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="uk-width-1-3@m">
+                <div class="uk-card uk-card-secondary uk-card-body uk-border-rounded">
+                    <h4 class="uk-text-bold"><span uk-icon="info" class="uk-margin-small-right"></span> Site Info</h4>
+                    <ul class="uk-list uk-list-divider uk-text-small">
+                        <li>Active Theme: <strong>{{ settings.active_theme }}</strong></li>
+                        <li>Site URL: <code>{{ request.host_url }}</code></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="uk-margin-large-top">
+            <button class="uk-button uk-button-primary uk-button-large" type="submit">Save Settings</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

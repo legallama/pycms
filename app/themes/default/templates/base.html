@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>{% block title %}Home{% endblock %} | pycms</title>
+  <title>{% block title %}Home{% endblock %} | {{ site_settings.site_name }}</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/uikit@3.21.12/dist/css/uikit.min.css" />
   <link rel="stylesheet" href="/static/theme/css/theme.css" />
   <script defer src="https://cdn.jsdelivr.net/npm/uikit@3.21.12/dist/js/uikit.min.js"></script>
@@ -30,7 +30,7 @@
       <div class="{{ 'uk-container' if theme_config.position_widths['navbar'] != 'full' else '' }}">
         <div uk-navbar>
           <div class="uk-navbar-left">
-            <a class="uk-navbar-item uk-logo" href="/">pycms</a>
+            <a class="uk-navbar-item uk-logo" href="/home">{{ site_settings.site_name }}</a>
           </div>
           <div class="uk-navbar-right">
             {% set default_menu_html %}
@@ -66,6 +66,17 @@
             {{ default_menu_html | safe }}
             {% endif %}
 
+            <a class="uk-navbar-item uk-position-relative" href="{{ url_for('shop.account') if current_user.is_authenticated else url_for('shop.login') }}" title="My Account" style="padding-right: 15px;">
+              <span uk-icon="icon: user; ratio: 1.1"></span>
+            </a>
+
+            <a class="uk-navbar-item uk-position-relative" href="{{ url_for('shop.cart_view') }}" title="Shopping Cart" style="padding-right: 15px;">
+              <span uk-icon="icon: cart; ratio: 1.1"></span>
+              {% if cart_count %}
+              <span class="uk-badge uk-position-top-right shadow-sm" style="background: #1e87f0; font-size: 0.65rem; min-width: 18px; height: 18px; line-height: 18px; top: 10px; right: 5px; border: 2px solid #fff;">{{ cart_count }}</span>
+              {% endif %}
+            </a>
+
             <a class="uk-navbar-toggle uk-hidden@m" uk-navbar-toggle-icon href="#mobile-nav" uk-toggle></a>
           </div>
         </div>
@@ -100,6 +111,17 @@
       {% block main_content %}
       <div class="uk-grid-large" uk-grid>
         <div class="uk-width-expand">
+          {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+          {% for category, message in messages %}
+          <div class="uk-alert-{{ 'danger' if category == 'danger' else category }}" uk-alert>
+              <a class="uk-alert-close" uk-close></a>
+              <p>{{ message }}</p>
+          </div>
+          {% endfor %}
+          {% endif %}
+          {% endwith %}
+
           {% block content %}{% endblock %}
         </div>
         {% set sidebar_html = render_position("sidebar") %}
@@ -141,7 +163,7 @@
       {% if footer_html %}
       {{ footer_html }}
       {% else %}
-      <div class="uk-text-small uk-text-muted">Powered by pycms</div>
+      <div class="uk-text-small uk-text-muted">Powered by PageCraft</div>
       {% endif %}
     </div>
   </footer>
@@ -161,6 +183,14 @@
     <div class="uk-offcanvas-bar">
       <button class="uk-offcanvas-close" type="button" uk-close></button>
       <div class="uk-margin-top">
+        <a href="{{ url_for('shop.account') if current_user.is_authenticated else url_for('shop.login') }}" class="uk-button uk-button-default uk-button-small uk-width-1-1 uk-margin-small-bottom">
+          <span uk-icon="icon: user; ratio: 0.8" class="uk-margin-small-right"></span> 
+          Account
+        </a>
+        <a href="{{ url_for('shop.cart_view') }}" class="uk-button uk-button-default uk-button-small uk-width-1-1 uk-margin-small-bottom">
+          <span uk-icon="icon: cart; ratio: 0.8" class="uk-margin-small-right"></span> 
+          Cart {% if cart_count %}({{ cart_count }}){% endif %}
+        </a>
         {% set mobile_nav_html = render_position("mobile-nav") %}
         {% if mobile_nav_html %}
         {{ mobile_nav_html }}

@@ -10,4 +10,12 @@ MODULE_TYPES = [
     ("slider", "Dynamic Slider (UIkit)"),
     ("gallery", "Image Gallery (UIkit Lightbox)"),
     ("media_lightbox", "Media Showcase (Video & Image Lightbox)"),
+    ("breadcrumbs", "Breadcrumbs"),
+    ("card", "UIkit Card"),
+    ("accordion", "UIkit Accordion"),
+    ("slideshow", "UIkit Slideshow"),
+    ("parallax", "Parallax Fixed Background Component"),
+    ("countdown", "UIkit Countdown Timer"),
+    ("footer", "Mega Footer Component"),
+    ("product_grid", "Shop: Product Grid"),
 ]

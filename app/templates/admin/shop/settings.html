@@ -1,0 +1,54 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Shop Settings{% endblock %}
+{% block page_title %}Shop Settings{% endblock %}
+
+{% block content %}
+<div class="uk-card uk-card-default uk-card-body">
+    <h3 class="uk-card-title">Payment Gateway Configuration</h3>
+    <form method="post" class="uk-form-stacked">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+        <div class="uk-margin">
+            <label class="uk-form-label uk-text-bold">Currency</label>
+            <select class="uk-select" name="currency">
+                <option value="USD" {{ 'selected' if config.get('currency') == 'USD' else '' }}>USD ($)</option>
+                <option value="EUR" {{ 'selected' if config.get('currency') == 'EUR' else '' }}>EUR (€)</option>
+                <option value="GBP" {{ 'selected' if config.get('currency') == 'GBP' else '' }}>GBP (£)</option>
+            </select>
+        </div>
+
+        <hr>
+
+        <h4 class="uk-heading-bullet">Stripe</h4>
+        <div class="uk-margin">
+            <label class="uk-form-label">Publishable Key</label>
+            <input class="uk-input" type="text" name="stripe_publishable_key" value="{{ config.get('stripe_publishable_key', '') }}">
+        </div>
+        <div class="uk-margin">
+            <label class="uk-form-label">Secret Key</label>
+            <input class="uk-input" type="password" name="stripe_secret_key" value="{{ config.get('stripe_secret_key', '') }}">
+        </div>
+
+        <hr>
+
+        <h4 class="uk-heading-bullet">PayPal</h4>
+        <div class="uk-margin">
+            <label class="uk-form-label">Client ID</label>
+            <input class="uk-input" type="text" name="paypal_client_id" value="{{ config.get('paypal_client_id', '') }}">
+        </div>
+
+        <hr>
+
+        <h4 class="uk-heading-bullet">Paddle</h4>
+        <div class="uk-margin">
+            <label class="uk-form-label">Vendor ID</label>
+            <input class="uk-input" type="text" name="paddle_vendor_id" value="{{ config.get('paddle_vendor_id', '') }}">
+        </div>
+
+        <div class="uk-margin-large-top">
+            <button class="uk-button uk-button-primary" type="submit">Save Settings</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

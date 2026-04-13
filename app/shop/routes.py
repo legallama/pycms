@@ -1,0 +1,335 @@
+import json
+from flask import Blueprint, render_template, request, redirect, url_for, flash, abort, session
+from ..extensions import db
+from ..models.shop import Product, Order
+from ..models.user import User, UserRole
+from flask_login import login_required, current_user, login_user, logout_user
+from ..auth import require_roles
+from ..models.site_settings import SiteSettings
+from ..templating import get_main_menu_items
+
+shop_bp = Blueprint("shop", __name__)
+
+
+def _render_shop_theme(template_name: str, **context):
+    """Helper to render a template within the active theme for the shop with fallback."""
+    settings = SiteSettings.load()
+    theme = settings.active_theme
+    try:
+        return render_template(f"{theme}/templates/{template_name}", 
+                               main_menu_items=get_main_menu_items(),
+                               active_theme=theme,
+                               **context)
+    except:
+        return render_template(template_name, 
+                               main_menu_items=get_main_menu_items(),
+                               active_theme=theme,
+                               **context)
+
+# --- PUBLIC SHOP ROUTES ---
+
+@shop_bp.get("/shop")
+def index():
+    products = db.session.execute(db.select(Product).where(Product.is_active == True).order_by(Product.name.asc())).scalars().all()
+    return _render_shop_theme("shop/index.html", products=products)
+
+@shop_bp.get("/shop/product/<slug>")
+def product_detail(slug: str):
+    product = db.session.execute(db.select(Product).where(Product.slug == slug, Product.is_active == True)).scalar_one_or_none()
+    if not product:
+        abort(404)
+    return _render_shop_theme("shop/product.html", product=product)
+
+# --- CART ROUTES ---
+
+@shop_bp.post("/cart/add/<int:product_id>")
+def cart_add(product_id: int):
+    from ..templating import slugify_filter
+    p = db.session.get(Product, product_id)
+    if not p or not p.is_active: abort(404)
+    
+    cart = session.get("cart", {})
+    
+    # Capture options
+    selected_options = {}
+    if p.options_json and p.options_json != '[]':
+        try:
+            options = json.loads(p.options_json)
+            for opt in options:
+                field_name = f"option_{slugify_filter(opt['name'])}"
+                val = request.form.get(field_name)
+                if val:
+                    selected_options[opt['name']] = val
+        except:
+            pass
+            
+    # Key based on ID + Options
+    opt_sig = "|".join([f"{k}:{v}" for k, v in selected_options.items()])
+    cart_key = f"{product_id}_{opt_sig}" if opt_sig else str(product_id)
+
+    if cart_key in cart:
+        cart[cart_key]["quantity"] += 1
+    else:
+        cart[cart_key] = {
+            "id": product_id,
+            "name": p.name,
+            "price": p.price,
+            "image_url": p.image_url,
+            "slug": p.slug,
+            "quantity": 1,
+            "options": selected_options
+        }
+    
+    session["cart"] = cart
+    session.modified = True
+    flash(f"Added {p.name} to cart.", "success")
+    return redirect(request.referrer or url_for("shop.index"))
+
+@shop_bp.get("/cart")
+def cart_view():
+    cart = session.get("cart", {})
+    total = sum(item["price"] * item["quantity"] for item in cart.values())
+    return _render_shop_theme("shop/cart.html", cart=cart, total=total)
+
+@shop_bp.post("/cart/update")
+def cart_update():
+    cart = session.get("cart", {})
+    for p_id_str, item in cart.items():
+        qty = request.form.get(f"qty_{p_id_str}")
+        if qty is not None and qty.isdigit():
+            item["quantity"] = int(qty)
+            
+    session["cart"] = {k: v for k, v in cart.items() if v["quantity"] > 0}
+    session.modified = True
+    flash("Cart updated.", "info")
+    return redirect(url_for("shop.cart_view"))
+
+@shop_bp.post("/cart/remove/<cart_key>")
+def cart_remove(cart_key: str):
+    cart = session.get("cart", {})
+    if cart_key in cart:
+        del cart[cart_key]
+        session["cart"] = cart
+        session.modified = True
+        flash("Item removed.", "info")
+    return redirect(url_for("shop.cart_view"))
+
+@shop_bp.route("/checkout", methods=["GET", "POST"])
+def checkout():
+    cart = session.get("cart", {})
+    if not cart:
+        flash("Your cart is empty.", "warning")
+        return redirect(url_for("shop.index"))
+    
+    total = sum(item["price"] * item["quantity"] for item in cart.values())
+    settings = SiteSettings.load()
+    
+    if request.method == "POST":
+        from ..models.crm import Contact, Lead, LeadNote
+        from ..models.user import User, UserRole
+        
+        email = request.form.get("email")
+        name = request.form.get("name")
+        address = request.form.get("address")
+        city = request.form.get("city")
+        zip_code = request.form.get("zip")
+        
+        if not email or not name:
+            flash("Name and Email are required.", "danger")
+            return redirect(url_for("shop.checkout"))
+            
+        # 1. Shop Order
+        order = Order(
+            user_id=current_user.id if current_user.is_authenticated else None,
+            customer_name=name,
+            customer_email=email,
+            shipping_address=address,
+            shipping_city=city,
+            shipping_zip=zip_code,
+            total_amount=total,
+            status="pending",
+            items_json=json.dumps(cart)
+        )
+        db.session.add(order)
+        db.session.flush() # Get Order ID
+        
+        # 2. CRM Integration
+        # ... (find or create contact)
+        contact = db.session.execute(db.select(Contact).where(Contact.email == email)).scalar_one_or_none()
+        if not contact:
+            contact = Contact(name=name, email=email, address=address, city=city, zip_code=zip_code)
+            db.session.add(contact)
+            db.session.flush()
+            
+        # Create Lead
+        lead = Lead(
+            contact_id=contact.id,
+            stage="new",
+            source="Shop",
+            value=int(total)
+        )
+        db.session.add(lead)
+        db.session.flush()
+        
+        # Add Note
+        admin = db.session.execute(db.select(User).where(User.role == UserRole.ADMIN)).scalars().first()
+        admin_id = admin.id if admin else 1
+        
+        note_body = f"Order #{order.id} initiated via Shop. Total: ${total:.2f}. Items: {len(cart)}"
+        note_body += f"\nShipping: {address}, {city}, {zip_code}"
+        for k, item in cart.items():
+            opts_str = f" ({', '.join([f'{ok}: {ov}' for ok, ov in item.get('options', {}).items()])})" if item.get('options') else ""
+            note_body += f"\n- {item['name']} x{item['quantity']}{opts_str}"
+
+        note = LeadNote(
+            lead_id=lead.id,
+            body=note_body,
+            created_by_id=admin_id
+        )
+        db.session.add(note)
+        
+        db.session.commit()
+        
+        # Clear cart
+        session["cart"] = {}
+        session.modified = True
+        
+        flash("Order placed successfully! We will contact you soon for payment.", "success")
+        return _render_shop_theme("shop/success.html", order=order)
+
+    return _render_shop_theme("shop/checkout.html", cart=cart, total=total)
+
+# --- ACCOUNT ROUTES ---
+
+@shop_bp.route("/register", methods=["GET", "POST"])
+def register():
+    if current_user.is_authenticated:
+        return redirect(url_for("shop.index"))
+    if request.method == "POST":
+        email = request.form.get("email")
+        password = request.form.get("password")
+        name = request.form.get("name")
+        
+        if db.session.execute(db.select(User).where(User.email == email)).scalar():
+            flash("Email already registered.", "danger")
+            return redirect(url_for("shop.register"))
+            
+        user = User(email=email, role=UserRole.CUSTOMER.value)
+        user.set_password(password)
+        db.session.add(user)
+        db.session.commit()
+        
+        login_user(user)
+        flash("Welcome! Your account has been created.", "success")
+        return redirect(url_for("shop.account"))
+        
+    return _render_shop_theme("shop/register.html")
+
+@shop_bp.route("/login", methods=["GET", "POST"])
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for("shop.account"))
+    if request.method == "POST":
+        email = request.form.get("email")
+        password = request.form.get("password")
+        user = db.session.execute(db.select(User).where(User.email == email)).scalar()
+        if user and user.check_password(password):
+            login_user(user)
+            return redirect(url_for("shop.account"))
+        flash("Invalid email or password.", "danger")
+    return _render_shop_theme("shop/login.html")
+
+@shop_bp.route("/logout")
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for("shop.index"))
+
+@shop_bp.get("/account")
+@login_required
+def account():
+    orders = db.session.execute(db.select(Order).where(Order.user_id == current_user.id).order_by(Order.created_at.desc())).scalars().all()
+    # Check for subscriptions (products of type subscription)
+    # This is a bit advanced, but let's just show order history for now.
+    return _render_shop_theme("shop/account.html", orders=orders)
+
+@shop_bp.get("/admin/shop/products")
+@login_required
+@require_roles(UserRole.ADMIN, UserRole.EDITOR)
+def admin_products():
+    products = db.session.execute(db.select(Product).order_by(Product.created_at.desc())).scalars().all()
+    return render_template("admin/shop/products/list.html", products=products)
+
+@shop_bp.route("/admin/shop/products/new", methods=["GET", "POST"])
+@login_required
+@require_roles(UserRole.ADMIN, UserRole.EDITOR)
+def admin_products_new():
+    if request.method == "POST":
+        p = Product(
+            name=request.form.get("name"),
+            slug=request.form.get("slug"),
+            description=request.form.get("description"),
+            price=float(request.form.get("price") or 0.0),
+            inventory=int(request.form.get("inventory") or 0),
+            image_url=request.form.get("image_url"),
+            is_active=bool(request.form.get("is_active")),
+            product_type=request.form.get("product_type"),
+            options_json=request.form.get("options_json") or "[]"
+        )
+        db.session.add(p)
+        db.session.commit()
+        flash("Product created.", "success")
+        return redirect(url_for("shop.admin_products"))
+    return render_template("admin/shop/products/edit.html", product=None)
+
+@shop_bp.route("/admin/shop/products/<int:id>/edit", methods=["GET", "POST"])
+@login_required
+@require_roles(UserRole.ADMIN, UserRole.EDITOR)
+def admin_products_edit(id: int):
+    p = db.session.get(Product, id)
+    if not p: abort(404)
+    if request.method == "POST":
+        p.name = request.form.get("name")
+        p.slug = request.form.get("slug")
+        p.description = request.form.get("description")
+        p.price = float(request.form.get("price") or 0.0)
+        p.inventory = int(request.form.get("inventory") or 0)
+        p.image_url = request.form.get("image_url")
+        p.is_active = bool(request.form.get("is_active"))
+        p.product_type = request.form.get("product_type")
+        p.options_json = request.form.get("options_json") or "[]"
+        db.session.commit()
+        flash("Product updated.", "success")
+        return redirect(url_for("shop.admin_products"))
+    return render_template("admin/shop/products/edit.html", product=p)
+
+@shop_bp.get("/admin/shop/orders")
+@login_required
+@require_roles(UserRole.ADMIN, UserRole.EDITOR)
+def admin_orders():
+    orders = db.session.execute(db.select(Order).order_by(Order.created_at.desc())).scalars().all()
+    return render_template("admin/shop/orders/list.html", orders=orders)
+
+@shop_bp.route("/admin/shop/settings", methods=["GET", "POST"])
+@login_required
+@require_roles(UserRole.ADMIN)
+def admin_settings():
+    settings = SiteSettings.load()
+    try:
+        config = json.loads(settings.config_json or "{}")
+    except:
+        config = {}
+    
+    if request.method == "POST":
+        config["stripe_publishable_key"] = request.form.get("stripe_publishable_key")
+        config["stripe_secret_key"] = request.form.get("stripe_secret_key")
+        config["paypal_client_id"] = request.form.get("paypal_client_id")
+        config["paddle_vendor_id"] = request.form.get("paddle_vendor_id")
+        config["currency"] = request.form.get("currency") or "USD"
+        
+        settings.config_json = json.dumps(config)
+        db.session.commit()
+        flash("Shop settings updated.", "success")
+        return redirect(url_for("shop.admin_settings"))
+        
+    return render_template("admin/shop/settings.html", config=config)

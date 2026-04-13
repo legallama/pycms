@@ -507,7 +507,7 @@
 <div class="media-upload-zone" id="upload-zone">
     <form id="upload-form" method="post" action="{{ url_for('media.media_upload') }}" enctype="multipart/form-data">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-        <input type="file" name="file" id="file-input" accept="image/*,.pdf" />
+        <input type="file" name="file" id="file-input" accept="image/*,.pdf,.mp4,.mov,.webm" />
     </form>
     <div class="upload-icon" uk-icon="icon: cloud-upload; ratio: 2"></div>
     <div>
@@ -515,7 +515,7 @@
             Drop files here or <span style="color: var(--primary); cursor: pointer;">browse</span>
         </p>
         <p class="uk-text-meta uk-margin-small-top">
-            PNG, JPG, GIF, WebP, or PDF — Max 15 MB
+            PNG, JPG, WebP, PDF, or MP4 — Max 100 MB
         </p>
     </div>
     <div class="upload-progress" id="upload-progress">
@@ -552,14 +552,19 @@
             {% if f.mime.startswith('image/') %}
             <img src="{{ url_for('media.uploads_serve', relpath='thumbs/' ~ f.path.replace('\\', '/').split('/')[-1]) }}"
                  alt="{{ f.filename }}" loading="lazy">
+            {% elif f.mime.startswith('video/') %}
+            <div class="uk-cover-container uk-width-1-1 uk-height-1-1">
+                <video src="{{ url_for('media.uploads_serve', relpath=f.path) }}#t=0.5" muted class="uk-cover" style="pointer-events: none;"></video>
+                <div class="uk-position-center" style="pointer-events: none;"><span uk-icon="icon: play-circle; ratio: 2" class="uk-light"></span></div>
+            </div>
             {% else %}
             <span class="file-type-icon" uk-icon="icon: file-pdf; ratio: 2.5"></span>
             {% endif %}
 
             <div class="media-grid-overlay">
                 {% if mode == 'select' %}
-                <button class="overlay-btn" title="Select this image"
-                        onclick="event.stopPropagation(); selectImage('{{ url_for('media.uploads_serve', relpath=f.path) }}')"
+                <button class="overlay-btn" title="Select this file"
+                        onclick="event.stopPropagation(); selectImage('{{ url_for('media.uploads_serve', relpath=f.path, _external=True) }}')"
                         uk-icon="icon: check; ratio: 1.2"></button>
                 {% else %}
                 <a class="overlay-btn" href="{{ url_for('media.uploads_serve', relpath=f.path) }}"
@@ -601,6 +606,8 @@
             {% if f.mime.startswith('image/') %}
             <img src="{{ url_for('media.uploads_serve', relpath='thumbs/' ~ f.path.replace('\\', '/').split('/')[-1]) }}"
                  alt="{{ f.filename }}" loading="lazy">
+            {% elif f.mime.startswith('video/') %}
+            <span uk-icon="icon: play-circle; ratio: 1.2" style="color: var(--primary);"></span>
             {% else %}
             <span uk-icon="icon: file-pdf; ratio: 1.2" style="color: var(--text-muted);"></span>
             {% endif %}
@@ -616,7 +623,7 @@
         <div class="media-list-actions">
             {% if mode == 'select' %}
             <button class="uk-button uk-button-primary uk-button-small" 
-                    onclick="selectImage('{{ url_for('media.uploads_serve', relpath=f.path) }}')">
+                    onclick="selectImage('{{ url_for('media.uploads_serve', relpath=f.path, _external=True) }}')">
                 Select
             </button>
             {% else %}
@@ -661,6 +668,8 @@
             <div class="media-detail-preview">
                 {% if f.mime.startswith('image/') %}
                 <img src="{{ url_for('media.uploads_serve', relpath=f.path) }}" alt="{{ f.filename }}">
+                {% elif f.mime.startswith('video/') %}
+                <video src="{{ url_for('media.uploads_serve', relpath=f.path) }}" controls style="max-width: 100%; max-height: 400px;"></video>
                 {% else %}
                 <span uk-icon="icon: file-pdf; ratio: 4" style="color: var(--text-muted); padding: 40px;"></span>
                 {% endif %}
@@ -770,7 +779,7 @@
     var gridView = document.getElementById('grid-view');
     var listView = document.getElementById('list-view');
 
-    var savedView = localStorage.getItem('pycms-media-view') || 'grid';
+    var savedView = localStorage.getItem('pagecraft-media-view') || 'grid';
     setView(savedView);
 
     if (btnGrid && btnList) {
@@ -791,7 +800,7 @@
             btnGrid.classList.add('active');
             btnList.classList.remove('active');
         }
-        localStorage.setItem('pycms-media-view', mode);
+        localStorage.setItem('pagecraft-media-view', mode);
     }
 
     // ─── Search ───

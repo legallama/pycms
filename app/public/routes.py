@@ -1,4 +1,4 @@
-from flask import Blueprint, current_app, render_template, abort
+from flask import Blueprint, current_app, render_template, abort, request
 
 from ..extensions import db
 from ..models.cms import Page, Post, PublishStatus
@@ -31,16 +31,18 @@ def home():
 
 @public_bp.get("/blog")
 def blog_index():
-    posts = (
-        db.session.execute(
-            db.select(Post)
-            .where(Post.status == PublishStatus.PUBLISHED.value)
-            .order_by(Post.published_at.desc().nullslast(), Post.updated_at.desc())
-        )
-        .scalars()
-        .all()
+    page_num = request.args.get('page', 1, type=int)
+    settings = SiteSettings.load()
+    per_page = settings.posts_per_page
+    
+    pagination = db.paginate(
+        db.select(Post)
+        .where(Post.status == PublishStatus.PUBLISHED.value)
+        .order_by(Post.published_at.desc().nullslast(), Post.updated_at.desc()),
+        page=page_num,
+        per_page=per_page
     )
-    return _render_theme("blog/index.html", posts=posts)
+    return _render_theme("blog/index.html", pagination=pagination)
 
 
 @public_bp.get("/blog/<slug>")
