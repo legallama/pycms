@@ -34,6 +34,12 @@
   {% endif %}
 
   {% block head %}{% endblock %}
+  <script>
+    const userTheme = localStorage.getItem('theme') || 'light';
+    if (userTheme === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    }
+  </script>
 </head>
 
 <body>
@@ -99,6 +105,10 @@
               {% if cart_count %}
               <span class="uk-badge uk-position-top-right shadow-sm" style="background: #1e87f0; font-size: 0.65rem; min-width: 18px; height: 18px; line-height: 18px; top: 10px; right: 5px; border: 2px solid #fff;">{{ cart_count }}</span>
               {% endif %}
+            </a>
+
+            <a id="theme-toggle" class="uk-navbar-item" href="#" title="Toggle Theme" style="padding-right: 15px;" uk-tooltip>
+                <span uk-icon="icon: paint-bucket; ratio: 1.1"></span>
             </a>
 
             <a class="uk-navbar-toggle uk-hidden@m" uk-navbar-toggle-icon href="#mobile-nav" uk-toggle></a>
@@ -245,6 +255,24 @@
       </div>
     </div>
   </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const toggle = document.getElementById('theme-toggle');
+        if (toggle) {
+            toggle.addEventListener('click', function(e) {
+                e.preventDefault();
+                const root = document.documentElement;
+                if (root.getAttribute('data-theme') === 'dark') {
+                    root.removeAttribute('data-theme');
+                    localStorage.setItem('theme', 'light');
+                } else {
+                    root.setAttribute('data-theme', 'dark');
+                    localStorage.setItem('theme', 'dark');
+                }
+            });
+        }
+    });
+  </script>
 </body>
 
 </html>
