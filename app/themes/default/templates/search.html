@@ -1,0 +1,46 @@
+{% extends active_theme + "/templates/base.html" %}
+
+{% block title %}Search Results for "{{ query }}"{% endblock %}
+
+{% block content %}
+<div class="uk-section">
+    <div class="uk-container uk-container-small">
+        <h1 class="uk-heading-small">Search Results</h1>
+        <p class="uk-text-muted">Showing results for: <strong>{{ query }}</strong></p>
+
+        <form action="{{ url_for('site.search') }}" method="get" class="uk-margin-large-bottom">
+            <div class="uk-inline uk-width-1-1">
+                <span class="uk-form-icon" uk-icon="icon: search"></span>
+                <input class="uk-input uk-form-large" type="text" name="q" value="{{ query }}" placeholder="Search again...">
+            </div>
+        </form>
+
+        {% if results %}
+            <div class="uk-grid-medium" uk-grid>
+                {% for r in results %}
+                <div class="uk-width-1-1">
+                    <div class="uk-card uk-card-default uk-card-body uk-card-small uk-border-rounded">
+                        <div class="uk-flex uk-flex-between uk-flex-middle">
+                            <h3 class="uk-card-title uk-margin-remove"><a href="{{ r.url }}" class="uk-link-reset">{{ r.title }}</a></h3>
+                            <span class="uk-label">{{ r.type }}</span>
+                        </div>
+                        {% if r.snippet %}
+                            <p class="uk-text-meta uk-margin-small-top">{{ r.snippet }}</p>
+                        {% endif %}
+                        <div class="uk-margin-small-top">
+                            <a href="{{ r.url }}" class="uk-button uk-button-text">Read More</a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="uk-placeholder uk-text-center">
+                <span uk-icon="icon: search; ratio: 2" class="uk-text-muted"></span>
+                <p>No results found for your query. Try different keywords.</p>
+                <a href="/" class="uk-button uk-button-default">Back to Home</a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

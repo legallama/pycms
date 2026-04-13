@@ -3,11 +3,11 @@
     padding: 0px;
     margin-bottom: 0 !important;
     font-size: 0.8rem;
-    border-bottom: 1px solid #eee;
+    border-bottom: 0px solid #3a3939 !important;
 }
 
 .tm-position-header {
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid #adadad;
 }
 
 .tm-position-bottom {
@@ -99,20 +99,146 @@ aside .uk-card {
 }
 
 /* ─── Frontend Dark Mode Variables & Overrides ─── */
+@keyframes themeGradientAnimation {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
 :root {
     --bg-main: #ffffff;
     --text-main: #333333;
+    --text-muted: #666666;
     --card-bg: #ffffff;
     --border-color: #e5e7eb;
     --primary: #6366f1;
+    --secondary: #ec4899;
+    --radius: 8px;
+    --font-main: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-heading: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-size-base: 16px;
+    --heading-weight: 700;
+    --line-height: 1.6;
+    --letter-spacing: normal;
+    --heading-transform: none;
+    --link-decoration: none;
+    --nav-height: 80px;
+    --bg-pattern: none;
+    --gradient-speed: 15s;
+    --gradient-angle: -45deg;
+    --container-width: 1200px;
+    --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    --card-border-width: 1px;
+    --nav-bg: #ffffff;
+    --btn-padding: 8px 20px;
+    --input-padding: 8px 12px;
+    --input-border-width: 1px;
+    --input-bg: #ffffff;
+    --animation-speed: 0.2s;
+    --spacing-y: 40px;
 }
 
-html[data-theme="dark"] {
-    --bg-main: #111827;
-    --text-main: #f3f4f6;
-    --card-bg: #1f2937;
-    --border-color: #374151;
-    --primary: #818cf8;
+body {
+    font-family: var(--font-main);
+    color: var(--text-main);
+    font-size: var(--font-size-base);
+    line-height: var(--line-height);
+    background-image: var(--bg-pattern);
+}
+
+.uk-container {
+    max-width: var(--container-width) !important;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.uk-h1,
+.uk-h2,
+.uk-h3,
+.uk-h4,
+.uk-h5,
+.uk-h6 {
+    font-family: var(--font-heading);
+    font-weight: var(--heading-weight);
+    letter-spacing: var(--letter-spacing);
+    text-transform: var(--heading-transform);
+}
+
+.uk-card,
+.uk-button,
+.uk-input,
+.uk-select,
+.uk-textarea,
+.uk-badge,
+.uk-label {
+    border-radius: var(--radius) !important;
+    transition: all var(--animation-speed) ease-in-out !important;
+}
+
+.uk-card-default {
+    background: var(--card-bg) !important;
+    box-shadow: var(--card-shadow) !important;
+    border: var(--card-border-width) solid var(--border-color) !important;
+}
+
+.uk-button-primary {
+    background-color: var(--primary) !important;
+    padding: var(--btn-padding);
+}
+
+.uk-input,
+.uk-select,
+.uk-textarea {
+    background-color: var(--input-bg) !important;
+    border-width: var(--input-border-width) !important;
+    padding: var(--input-padding);
+}
+
+.uk-navbar-container {
+    background: var(--nav-bg) !important;
+    border-bottom: 1px solid var(--border-color);
+    transition: background var(--animation-speed) ease-in-out;
+    min-height: var(--nav-height);
+}
+
+a,
+.uk-link {
+    transition: color var(--animation-speed) ease-in-out;
+}
+
+.uk-navbar-container {
+    background: var(--nav-bg) !important;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.uk-text-muted,
+.uk-text-meta {
+    color: var(--text-muted) !important;
+}
+
+/* Glassmorphism utility */
+.glass {
+    background: rgba(255, 255, 255, 0.7) !important;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+html[data-theme="dark"] .glass {
+    background: rgba(31, 41, 55, 0.7) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 html[data-theme="dark"] body {
@@ -120,7 +246,7 @@ html[data-theme="dark"] body {
     color: var(--text-main) !important;
 }
 
-html[data-theme="dark"] .uk-section-default, 
+html[data-theme="dark"] .uk-section-default,
 html[data-theme="dark"] .uk-section-muted {
     background-color: var(--bg-main) !important;
 }
@@ -133,12 +259,18 @@ html[data-theme="dark"] .uk-card-muted {
 }
 
 /* UIkit Text Overrides for Dark Mode */
-html[data-theme="dark"] h1, html[data-theme="dark"] .uk-h1,
-html[data-theme="dark"] h2, html[data-theme="dark"] .uk-h2,
-html[data-theme="dark"] h3, html[data-theme="dark"] .uk-h3,
-html[data-theme="dark"] h4, html[data-theme="dark"] .uk-h4,
-html[data-theme="dark"] h5, html[data-theme="dark"] .uk-h5,
-html[data-theme="dark"] h6, html[data-theme="dark"] .uk-h6,
+html[data-theme="dark"] h1,
+html[data-theme="dark"] .uk-h1,
+html[data-theme="dark"] h2,
+html[data-theme="dark"] .uk-h2,
+html[data-theme="dark"] h3,
+html[data-theme="dark"] .uk-h3,
+html[data-theme="dark"] h4,
+html[data-theme="dark"] .uk-h4,
+html[data-theme="dark"] h5,
+html[data-theme="dark"] .uk-h5,
+html[data-theme="dark"] h6,
+html[data-theme="dark"] .uk-h6,
 html[data-theme="dark"] .uk-text-lead,
 html[data-theme="dark"] .uk-heading-medium,
 html[data-theme="dark"] .uk-heading-small,
@@ -161,7 +293,7 @@ html[data-theme="dark"] .uk-navbar-item {
     color: #e5e7eb !important;
 }
 
-html[data-theme="dark"] .tm-position-topbar,
+
 html[data-theme="dark"] .tm-position-header {
     border-color: var(--border-color) !important;
 }

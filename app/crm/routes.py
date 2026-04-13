@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import Blueprint, flash, redirect, render_template, request, url_for, current_app
 from flask_login import current_user, login_required
+import requests
 
 from ..auth import require_roles
 from ..extensions import db
@@ -217,6 +218,7 @@ def forms_edit(form_id: int | None = None):
         name = (request.form.get("name") or "").strip()
         fields_json = (request.form.get("fields_json") or "[]").strip()
         recipient = (request.form.get("email_recipient") or "").strip()
+        webhook_url = (request.form.get("webhook_url") or "").strip()
         success_msg = (request.form.get("success_message") or "Thank you!").strip()
         
         if not name:
@@ -229,6 +231,7 @@ def forms_edit(form_id: int | None = None):
             form.name = name
             form.fields_json = fields_json
             form.email_recipient = recipient
+            form.webhook_url = webhook_url
             form.success_message = success_msg
             
             db.session.commit()
@@ -346,6 +349,20 @@ def forms_submit_public(form_id: int):
         html_body += "</ul>"
         
         send_email(subject, form.email_recipient, html_body)
+            
+    # Trigger Webhook
+    if form.webhook_url:
+        try:
+            payload = {
+                "form_id": form.id,
+                "form_name": form.name,
+                "submission_id": sub.id,
+                "data": submission_data,
+                "timestamp": datetime.utcnow().isoformat()
+            }
+            requests.post(form.webhook_url, json=payload, timeout=5)
+        except Exception as e:
+            current_app.logger.error(f"Webhook failed for form {form.id}: {str(e)}")
 
     flash(form.success_message or "Thank you!", "success")
     return redirect(request.referrer or url_for("public.home"))

@@ -64,6 +64,7 @@ class Form(db.Model):
     # List of {label, type, name, required}
     fields_json = db.Column(db.Text, nullable=False, default="[]") 
     email_recipient = db.Column(db.String(255), nullable=True) # Send notification to
+    webhook_url = db.Column(db.String(500), nullable=True) # Send JSON POST to
     success_message = db.Column(db.String(255), nullable=True, default="Thank you! Your message has been sent.")
     created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
 

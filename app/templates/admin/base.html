@@ -80,6 +80,11 @@
             <span class="uk-margin-small-right" uk-icon="table"></span> Orders
           </a>
         </li>
+        <li class="{{ 'uk-active' if request.endpoint and 'shop.admin_discounts' in request.endpoint else '' }}">
+          <a href="{{ url_for('shop.admin_discounts') }}">
+            <span class="uk-margin-small-right" uk-icon="tag"></span> Discount Codes
+          </a>
+        </li>
         <li class="uk-nav-header">Site</li>
         <li class="{{ 'uk-active' if request.endpoint and 'site.menus' in request.endpoint else '' }}">
           <a href="{{ url_for('site.menus_list') }}">

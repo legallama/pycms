@@ -24,13 +24,19 @@
         background: var(--bg-card);
     }
     #canvas {
-        min-height: 250px;
+        min-height: 120px; /* Lower min-height to prevent vertical stretching */
         border: 2px dashed #e2e8f0;
         border-radius: 8px;
-        padding: 15px;
+        padding: 8px; 
         background: var(--bg-body);
         transition: border-color 0.2s ease;
         position: relative;
+    }
+    .field-instance .uk-card-body {
+        padding: 6px 10px !important; /* Even tighter card body */
+    }
+    .field-instance {
+        margin-bottom: 2px; /* Minimal gap */
     }
     #canvas.drag-over {
         border-color: var(--primary) !important;
@@ -72,6 +78,10 @@
                 <div class="uk-margin-small">
                     <label class="uk-form-label">Success Message</label>
                     <input class="uk-input uk-form-small" name="success_message" type="text" value="{{ form.success_message if form else 'Thank you!' }}">
+                </div>
+                <div class="uk-margin-small">
+                    <label class="uk-form-label" uk-tooltip="JSON POST will be sent to this URL on submission">Webhook URL (Zapier/Make)</label>
+                    <input class="uk-input uk-form-small" name="webhook_url" type="url" value="{{ form.webhook_url if form else '' }}" placeholder="https://hooks.zapier.com/...">
                 </div>
 
                 <hr class="uk-margin-small">
@@ -116,6 +126,9 @@
 
                 <div class="uk-margin-top">
                     <button class="uk-button uk-button-primary uk-width-1-1" type="submit">Save Form</button>
+                    <button class="uk-button uk-button-secondary uk-width-1-1 uk-margin-small-top" type="button" id="preview-btn">
+                        <span uk-icon="play" class="uk-margin-small-right"></span> Live Preview
+                    </button>
                     <a href="{{ url_for('crm.forms_list') }}" class="uk-button uk-button-text uk-width-1-1 uk-margin-small-top">Cancel</a>
                 </div>
             </div>
@@ -128,7 +141,7 @@
                 <p class="uk-text-meta uk-margin-small-bottom">Drag items here, then pull to arrange and edit their properties.</p>
                 
                 <!-- Native drag targets + UIkit sortable for internal sibling reordering only -->
-                <div id="canvas" class="uk-margin-top uk-grid-small" uk-grid uk-sortable="group: canvas-items">
+                <div id="canvas" class="uk-margin-small-top uk-grid-collapse" uk-grid uk-sortable="group: canvas-items">
                     <!-- Fields arrayed here -->
                 </div>
             </div>
@@ -182,11 +195,43 @@
                     <input class="uk-checkbox" type="checkbox" id="opt-sanitize" checked> Sanitize Input (Strip HTML elements for safety)
                 </label>
             </div>
+            
+            <hr class="uk-margin-small">
+            <h4 class="uk-text-bold uk-margin-remove">Conditional Logic</h4>
+            <div class="uk-margin-small" id="opt-logic-container">
+                <div class="uk-grid-small" uk-grid>
+                    <div class="uk-width-1-3">
+                        <select class="uk-select uk-form-small" id="opt-logic-action">
+                            <option value="always">Always Show</option>
+                            <option value="show">Show If</option>
+                            <option value="hide">Hide If</option>
+                        </select>
+                    </div>
+                    <div class="uk-width-1-3">
+                        <select class="uk-select uk-form-small" id="opt-logic-target"></select>
+                    </div>
+                    <div class="uk-width-1-3">
+                        <input class="uk-input uk-form-small" type="text" id="opt-logic-value" placeholder="Value">
+                    </div>
+                </div>
+                <p class="uk-text-meta">Control field visibility based on other field values.</p>
+            </div>
             <div class="uk-margin uk-text-right">
                 <button class="uk-button uk-button-default uk-modal-close" type="button">Cancel</button>
                 <button class="uk-button uk-button-primary" type="submit">Update Field</button>
             </div>
         </form>
+    </div>
+</div>
+
+<div id="preview-modal" uk-modal>
+    <div class="uk-modal-dialog uk-modal-body" style="width: 800px; max-width: 95vw;">
+        <button class="uk-modal-close-default" type="button" uk-close></button>
+        <h2 class="uk-modal-title">Live Preview</h2>
+        <div id="preview-container" class="uk-margin-top"></div>
+        <div class="uk-margin-top uk-text-right">
+            <button class="uk-button uk-button-default uk-modal-close" type="button">Close Preview</button>
+        </div>
     </div>
 </div>
 
@@ -251,7 +296,10 @@ document.addEventListener('DOMContentLoaded', function() {
             sanitize: true,
             choices: '',
             description: '',
-            width: '6'
+            width: '6',
+            logic_action: 'always',
+            logic_target: '',
+            logic_value: ''
         };
         
         // Let UIkit finish any internal events if needed, but append immediately
@@ -273,7 +321,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const wClass = widthClassMap[data.width || '6'];
 
         const div = document.createElement('div');
-        div.className = 'field-instance uk-margin-small-bottom uk-width-' + wClass + '@s';
+        div.className = 'field-instance uk-width-' + wClass + '@s';
         div.dataset.type = data.type;
         div.dataset.label = data.label;
         div.dataset.name = data.name;
@@ -282,6 +330,9 @@ document.addEventListener('DOMContentLoaded', function() {
         div.dataset.choices = data.choices || '';
         div.dataset.description = data.description || '';
         div.dataset.width = data.width || '6';
+        div.dataset.logic_action = data.logic_action || 'always';
+        div.dataset.logic_target = data.logic_target || '';
+        div.dataset.logic_value = data.logic_value || '';
 
         div.innerHTML = `
             <div class="uk-card uk-card-default uk-card-body uk-card-small">
@@ -328,6 +379,18 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('opt-sanitize').checked = el.dataset.sanitize !== 'false';
         document.getElementById('opt-width').value = el.dataset.width || '6';
         
+        // Populate logic targets (other fields)
+        const targetSelect = document.getElementById('opt-logic-target');
+        targetSelect.innerHTML = '<option value="">Select Field...</option>';
+        canvas.querySelectorAll('.field-instance').forEach(f => {
+            if (f !== el) {
+                targetSelect.innerHTML += `<option value="${f.dataset.name}">${f.dataset.label}</option>`;
+            }
+        });
+        document.getElementById('opt-logic-action').value = el.dataset.logic_action || 'always';
+        document.getElementById('opt-logic-target').value = el.dataset.logic_target || '';
+        document.getElementById('opt-logic-value').value = el.dataset.logic_value || '';
+        
         const choicesContainer = document.getElementById('opt-choices-container');
         if (['select', 'radio', 'checkbox'].includes(el.dataset.type)) {
             choicesContainer.style.display = 'block';
@@ -349,6 +412,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const choices = document.getElementById('opt-choices').value;
         const description = document.getElementById('opt-description').value;
         const width = document.getElementById('opt-width').value;
+        const l_action = document.getElementById('opt-logic-action').value;
+        const l_target = document.getElementById('opt-logic-target').value;
+        const l_value = document.getElementById('opt-logic-value').value;
 
         currentEditingEl.dataset.label = label;
         currentEditingEl.dataset.name = name;
@@ -357,10 +423,13 @@ document.addEventListener('DOMContentLoaded', function() {
         currentEditingEl.dataset.choices = choices;
         currentEditingEl.dataset.description = description;
         currentEditingEl.dataset.width = width;
+        currentEditingEl.dataset.logic_action = l_action;
+        currentEditingEl.dataset.logic_target = l_target;
+        currentEditingEl.dataset.logic_value = l_value;
         
         // Update width class on the spot
         const widthClassMap = { '6': '1-1', '5': '5-6', '4': '2-3', '3': '1-2', '2': '1-3', '1': '1-6' };
-        currentEditingEl.className = 'field-instance uk-margin-small-bottom uk-width-' + widthClassMap[width] + '@s';
+        currentEditingEl.className = 'field-instance uk-width-' + widthClassMap[width] + '@s';
         
         currentEditingEl.querySelector('.field-label-text').innerText = label;
         currentEditingEl.querySelector('.uk-text-meta').innerText = `(${currentEditingEl.dataset.type}${req ? '*' : ''})`;
@@ -382,7 +451,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 sanitize: el.dataset.sanitize !== 'false',
                 choices: el.dataset.choices || '',
                 description: el.dataset.description || '',
-                width: el.dataset.width || '6'
+                width: el.dataset.width || '6',
+                logic_action: el.dataset.logic_action || 'always',
+                logic_target: el.dataset.logic_target || '',
+                logic_value: el.dataset.logic_value || ''
             });
         });
         fieldsInput.value = JSON.stringify(fields);
@@ -392,6 +464,100 @@ document.addEventListener('DOMContentLoaded', function() {
         serialize();
         return true;
     };
+
+    // --- Preview Logic --- //
+    const previewBtn = document.getElementById('preview-btn');
+    const previewModal = UIkit.modal('#preview-modal');
+    const previewContainer = document.getElementById('preview-container');
+
+    previewBtn.onclick = () => {
+        serialize(); // Ensure fields_json is up to date
+        renderPreview();
+        previewModal.show();
+    };
+
+    function renderPreview() {
+        const fields = JSON.parse(fieldsInput.value || '[]');
+        if (fields.length === 0) {
+            previewContainer.innerHTML = '<p class="uk-text-muted">No fields added to preview.</p>';
+            return;
+        }
+
+        let html = '<div class="uk-grid-small" uk-grid>';
+        fields.forEach(f => {
+            const widthClassMap = { '6': '1-1', '5': '5-6', '4': '2-3', '3': '1-2', '2': '1-3', '1': '1-6' };
+            const wClass = widthClassMap[f.width] || '1-1';
+            
+            html += `<div class="uk-width-${wClass}@s preview-field-wrap" data-name="${f.name}" data-logic-action="${f.logic_action}" data-logic-target="${f.logic_target}" data-logic-value="${f.logic_value}">`;
+            
+            if (f.type === 'info') {
+                html += `<h3>${f.label}</h3><p>${f.description}</p>`;
+            } else {
+                html += `<label class="uk-form-label">${f.label}${f.required ? '*' : ''}</label>`;
+                if (f.type === 'textarea') {
+                    html += `<textarea class="uk-textarea" placeholder="${f.description}"></textarea>`;
+                } else if (f.type === 'select') {
+                    html += `<select class="uk-select"><option value="">Select...</option>`;
+                    (f.choices || '').split(',').forEach(c => {
+                        html += `<option value="${c.trim()}">${c.trim()}</option>`;
+                    });
+                    html += `</select>`;
+                } else if (f.type === 'radio' || f.type === 'checkbox') {
+                    (f.choices || '').split(',').forEach(c => {
+                        html += `<div class="uk-margin-small-top"><label><input class="uk-${f.type}" type="${f.type}" name="${f.name}"> ${c.trim()}</label></div>`;
+                    });
+                } else {
+                    html += `<input class="uk-input" type="${f.type}" placeholder="${f.description}">`;
+                }
+            }
+            html += `</div>`;
+        });
+        html += '</div>';
+        previewContainer.innerHTML = html;
+
+        // Initialize logic listeners in preview
+        initPreviewLogic();
+    }
+
+    function initPreviewLogic() {
+        const wraps = previewContainer.querySelectorAll('.preview-field-wrap');
+        const inputs = previewContainer.querySelectorAll('input, select, textarea');
+
+        function updateVisibility() {
+            // Map of current values
+            const values = {};
+            inputs.forEach(i => {
+                if (i.type === 'checkbox' || i.type === 'radio') {
+                    if (i.checked) values[i.name] = i.value || i.nextSibling.textContent.trim();
+                } else {
+                    values[i.name || i.closest('.preview-field-wrap').dataset.name] = i.value;
+                }
+            });
+
+            wraps.forEach(w => {
+                const action = w.dataset.logicAction;
+                const target = w.dataset.logicTarget;
+                const val = w.dataset.logicValue;
+
+                if (action === 'always' || !target) {
+                    w.style.display = '';
+                    return;
+                }
+
+                const targetVal = values[target] || '';
+                const match = targetVal.toString().toLowerCase() === val.toString().toLowerCase();
+
+                if (action === 'show') {
+                    w.style.display = match ? '' : 'none';
+                } else if (action === 'hide') {
+                    w.style.display = match ? 'none' : '';
+                }
+            });
+        }
+
+        inputs.forEach(i => i.addEventListener('input', updateVisibility));
+        updateVisibility(); // Initial check
+    }
 
     init();
 });

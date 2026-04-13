@@ -1,7 +1,7 @@
 import json
 from flask import Blueprint, render_template, request, redirect, url_for, flash, abort, session
 from ..extensions import db
-from ..models.shop import Product, Order
+from ..models.shop import Product, Order, DiscountCode
 from ..models.user import User, UserRole
 from flask_login import login_required, current_user, login_user, logout_user
 from ..auth import require_roles
@@ -68,8 +68,14 @@ def cart_add(product_id: int):
     cart_key = f"{product_id}_{opt_sig}" if opt_sig else str(product_id)
 
     if cart_key in cart:
+        if cart[cart_key]["quantity"] + 1 > p.inventory:
+            flash(f"Sorry, you've reached the maximum available stock for {p.name}.", "warning")
+            return redirect(request.referrer or url_for("shop.index"))
         cart[cart_key]["quantity"] += 1
     else:
+        if 1 > p.inventory:
+            flash(f"Sorry, {p.name} is currently out of stock.", "danger")
+            return redirect(request.referrer or url_for("shop.index"))
         cart[cart_key] = {
             "id": product_id,
             "name": p.name,
@@ -133,7 +139,32 @@ def checkout():
         address = request.form.get("address")
         city = request.form.get("city")
         zip_code = request.form.get("zip")
+        code_str = (request.form.get("discount_code") or "").strip().upper()
         
+        # 0. Check Inventory
+        for k, item in cart.items():
+            p = db.session.get(Product, item['id'])
+            if p and p.inventory < item['quantity']:
+                flash(f"Sorry, {p.name} is out of stock or does not have enough inventory.", "danger")
+                return redirect(url_for("shop.cart_view"))
+
+        # 0.1 Check Discount
+        discount = None
+        discount_amt = 0.0
+        if code_str:
+            discount = db.session.execute(db.select(DiscountCode).where(DiscountCode.code == code_str, DiscountCode.is_active == True)).scalar_one_or_none()
+            if discount:
+                if total >= discount.min_purchase:
+                    if discount.type == "percent":
+                        discount_amt = total * (discount.value / 100.0)
+                    else:
+                        discount_amt = min(discount.value, total)
+                    discount.usage_count += 1
+                else:
+                    flash(f"Discount code {code_str} requires a minimum purchase of ${discount.min_purchase:.2f}.", "warning")
+            else:
+                flash(f"Discount code {code_str} is invalid or expired.", "warning")
+
         if not email or not name:
             flash("Name and Email are required.", "danger")
             return redirect(url_for("shop.checkout"))
@@ -146,12 +177,20 @@ def checkout():
             shipping_address=address,
             shipping_city=city,
             shipping_zip=zip_code,
-            total_amount=total,
             status="pending",
-            items_json=json.dumps(cart)
+            items_json=json.dumps(cart),
+            discount_code=discount.code if discount else None,
+            discount_amount=discount_amt,
+            total_amount=total - discount_amt
         )
         db.session.add(order)
         db.session.flush() # Get Order ID
+        
+        # 1.1 Decrement Inventory
+        for k, item in cart.items():
+            p = db.session.get(Product, item['id'])
+            if p:
+                p.inventory -= item['quantity']
         
         # 2. CRM Integration
         # ... (find or create contact)
@@ -375,3 +414,58 @@ def admin_settings():
         return redirect(url_for("shop.admin_settings"))
         
     return render_template("admin/shop/settings.html", config=config)
+
+# --- ADMIN DISCOUNT ROUTES ---
+
+@shop_bp.get("/admin/shop/discounts")
+@login_required
+@require_roles(UserRole.ADMIN, UserRole.EDITOR)
+def admin_discounts():
+    discounts = db.session.execute(db.select(DiscountCode).order_by(DiscountCode.created_at.desc())).scalars().all()
+    return render_template("admin/shop/discounts/list.html", discounts=discounts)
+
+@shop_bp.route("/admin/shop/discounts/new", methods=["GET", "POST"])
+@login_required
+@require_roles(UserRole.ADMIN, UserRole.EDITOR)
+def admin_discounts_new():
+    if request.method == "POST":
+        d = DiscountCode(
+            code=request.form.get("code").strip().upper(),
+            type=request.form.get("type"),
+            value=float(request.form.get("value") or 0.0),
+            min_purchase=float(request.form.get("min_purchase") or 0.0),
+            is_active=bool(request.form.get("is_active"))
+        )
+        db.session.add(d)
+        db.session.commit()
+        flash("Discount code created.", "success")
+        return redirect(url_for("shop.admin_discounts"))
+    return render_template("admin/shop/discounts/edit.html", discount=None)
+
+@shop_bp.route("/admin/shop/discounts/<int:id>/edit", methods=["GET", "POST"])
+@login_required
+@require_roles(UserRole.ADMIN, UserRole.EDITOR)
+def admin_discounts_edit(id: int):
+    d = db.session.get(DiscountCode, id)
+    if not d: abort(404)
+    if request.method == "POST":
+        d.code = request.form.get("code").strip().upper()
+        d.type = request.form.get("type")
+        d.value = float(request.form.get("value") or 0.0)
+        d.min_purchase = float(request.form.get("min_purchase") or 0.0)
+        d.is_active = bool(request.form.get("is_active"))
+        db.session.commit()
+        flash("Discount code updated.", "success")
+        return redirect(url_for("shop.admin_discounts"))
+    return render_template("admin/shop/discounts/edit.html", discount=d)
+
+@shop_bp.route("/admin/shop/discounts/<int:id>/delete", methods=["POST"])
+@login_required
+@require_roles(UserRole.ADMIN)
+def admin_discounts_delete(id: int):
+    d = db.session.get(DiscountCode, id)
+    if d:
+        db.session.delete(d)
+        db.session.commit()
+        flash("Discount code deleted.", "success")
+    return redirect(url_for("shop.admin_discounts"))

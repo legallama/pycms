@@ -1,0 +1,72 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Manage Discounts{% endblock %}
+
+{% block content %}
+<div class="uk-flex uk-flex-between uk-flex-middle uk-margin-bottom">
+    <div>
+        <h1 class="uk-heading-small">Discount Codes</h1>
+    </div>
+    <div>
+        <a href="{{ url_for('shop.admin_discounts_new') }}" class="uk-button uk-button-primary">
+            <span uk-icon="plus"></span> New Code
+        </a>
+    </div>
+</div>
+
+<div class="uk-card uk-card-default uk-card-body uk-padding-remove">
+    <table class="uk-table uk-table-middle uk-table-divider uk-table-hover">
+        <thead>
+            <tr>
+                <th>Code</th>
+                <th>Type</th>
+                <th>Value</th>
+                <th>Min. Purchase</th>
+                <th>Usage</th>
+                <th>Status</th>
+                <th class="uk-table-shrink"></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for d in discounts %}
+            <tr>
+                <td><span class="uk-text-bold">{{ d.code }}</span></td>
+                <td>{{ d.type | capitalize }}</td>
+                <td>
+                    {% if d.type == 'percent' %}
+                        {{ d.value }}%
+                    {% else %}
+                        ${{ "%.2f"|format(d.value) }}
+                    {% endif %}
+                </td>
+                <td>${{ "%.2f"|format(d.min_purchase) }}</td>
+                <td>{{ d.usage_count }}</td>
+                <td>
+                    {% if d.is_active %}
+                        <span class="uk-label uk-label-success">Active</span>
+                    {% else %}
+                        <span class="uk-label uk-label-danger">Inactive</span>
+                    {% endif %}
+                </td>
+                <td class="uk-text-nowrap">
+                    <a href="{{ url_for('shop.admin_discounts_edit', id=d.id) }}" class="uk-button uk-button-text uk-margin-small-right" title="Edit">
+                        <span uk-icon="pencil"></span>
+                    </a>
+                    <form action="{{ url_for('shop.admin_discounts_delete', id=d.id) }}" method="post" class="uk-display-inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <button type="submit" class="uk-button uk-button-text uk-text-danger" title="Delete" onclick="return confirm('Delete this code?')">
+                            <span uk-icon="trash"></span>
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+            {% if not discounts %}
+            <tr>
+                <td colspan="7" class="uk-text-center uk-text-muted">No discount codes found.</td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

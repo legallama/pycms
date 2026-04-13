@@ -1,0 +1,65 @@
+{% extends "admin/base.html" %}
+
+{% block title %}{{ 'Edit' if discount else 'New' }} Discount Code{% endblock %}
+
+{% block content %}
+<div class="uk-margin-bottom">
+    <a href="{{ url_for('shop.admin_discounts') }}" class="uk-button uk-button-text">
+        <span uk-icon="arrow-left"></span> Back to List
+    </a>
+</div>
+
+<div class="uk-card uk-card-default uk-card-body">
+    <h2 class="uk-card-title">{{ 'Edit' if discount else 'Create New' }} Discount Code</h2>
+    
+    <form class="uk-form-stacked" method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        
+        <div class="uk-grid-small" uk-grid>
+            <div class="uk-width-1-2@s">
+                <label class="uk-form-label">Code</label>
+                <div class="uk-form-controls">
+                    <input class="uk-input" name="code" type="text" value="{{ discount.code if discount else '' }}" required placeholder="e.g. SUMMER20">
+                </div>
+            </div>
+            <div class="uk-width-1-2@s">
+                <label class="uk-form-label">Status</label>
+                <div class="uk-form-controls">
+                    <label>
+                        <input class="uk-checkbox" name="is_active" type="checkbox" {% if not discount or discount.is_active %}checked{% endif %}> Active
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="uk-grid-small uk-margin" uk-grid>
+            <div class="uk-width-1-3@s">
+                <label class="uk-form-label">Discount Type</label>
+                <div class="uk-form-controls">
+                    <select class="uk-select" name="type">
+                        <option value="percent" {% if discount and discount.type == 'percent' %}selected{% endif %}>Percentage (%)</option>
+                        <option value="fixed" {% if discount and discount.type == 'fixed' %}selected{% endif %}>Fixed Amount ($)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="uk-width-1-3@s">
+                <label class="uk-form-label">Discount Value</label>
+                <div class="uk-form-controls">
+                    <input class="uk-input" name="value" type="number" step="0.01" value="{{ discount.value if discount else '0' }}" required>
+                </div>
+            </div>
+            <div class="uk-width-1-3@s">
+                <label class="uk-form-label">Min. Purchase Amount ($)</label>
+                <div class="uk-form-controls">
+                    <input class="uk-input" name="min_purchase" type="number" step="0.01" value="{{ discount.min_purchase if discount else '0' }}" required>
+                </div>
+            </div>
+        </div>
+
+        <div class="uk-margin-large-top">
+            <button class="uk-button uk-button-primary" type="submit">Save Discount Code</button>
+            <a href="{{ url_for('shop.admin_discounts') }}" class="uk-button uk-button-default">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

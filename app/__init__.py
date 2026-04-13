@@ -73,12 +73,13 @@ def create_app(config_object: Optional[type[Config]] = None) -> Flask:
 
     @app.context_processor
     def inject_cart():
+        import json
         try:
             cart = session.get("cart", {})
             count = sum(item.get("quantity", 0) for item in cart.values())
         except:
             count = 0
-        return dict(cart_count=count)
+        return dict(cart_count=count, json_loads=json.loads)
 
     with app.app_context():
         from .models.navigation import Menu

@@ -19,6 +19,7 @@ class SiteSettings(db.Model):
     meta_description = db.Column(db.Text, nullable=True)
     meta_keywords = db.Column(db.String(500), nullable=True)
     google_analytics_id = db.Column(db.String(50), nullable=True)
+    gemini_api_key = db.Column(db.String(255), nullable=True)
 
     @classmethod
     def load(cls) -> "SiteSettings":

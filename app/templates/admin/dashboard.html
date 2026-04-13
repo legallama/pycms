@@ -3,68 +3,89 @@
 {% block title %}Dashboard{% endblock %}
 {% block page_title %}Dashboard{% endblock %}
 
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  .stat-card-new {
+    border-radius: 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-default);
+    padding: 24px;
+    transition: all 0.3s ease;
+  }
+  .stat-card-new:hover {
+    box-shadow: 0 8px 24px rgba(0,0,0,0.05);
+    border-color: var(--primary);
+  }
+  .chart-container {
+    height: 300px;
+    position: relative;
+  }
+</style>
+{% endblock %}
+
 {% block content %}
-  <div class="uk-grid-medium uk-child-width-1-2@m uk-child-width-1-4@l" uk-grid>
+  <!-- Stats Row -->
+  <div class="uk-grid-medium uk-child-width-1-2@m uk-child-width-1-3@l" uk-grid>
     <div>
-      <div class="uk-card uk-card-default uk-card-body">
-        <div class="uk-flex uk-flex-between uk-flex-middle">
-          <div>
-            <div class="uk-text-meta uk-text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.08em;">Content</div>
-            <div class="uk-text-large uk-text-bold uk-margin-small-top">Pages</div>
-          </div>
-          <div class="uk-icon-button stat-icon" uk-icon="copy"></div>
-        </div>
-        <div class="uk-margin-small-top">
-           <span class="uk-label uk-label-success">Active</span>
-        </div>
+      <div class="stat-card-new">
+        <div class="uk-text-meta uk-text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.08em;">Sales</div>
+        <div class="uk-text-large uk-text-bold uk-margin-small-top">${{ order_values|sum }}</div>
+        <div class="uk-text-meta uk-margin-small-top">Last 7 Days Revenue</div>
       </div>
     </div>
     <div>
-      <div class="uk-card uk-card-default uk-card-body">
-         <div class="uk-flex uk-flex-between uk-flex-middle">
-          <div>
-            <div class="uk-text-meta uk-text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.08em;">Content</div>
-            <div class="uk-text-large uk-text-bold uk-margin-small-top">Posts</div>
-          </div>
-          <div class="uk-icon-button stat-icon" uk-icon="file-edit"></div>
-        </div>
-        <div class="uk-margin-small-top">
-           <span class="uk-label uk-label-success">Active</span>
-        </div>
+      <div class="stat-card-new">
+        <div class="uk-text-meta uk-text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.08em;">CRM</div>
+        <div class="uk-text-large uk-text-bold uk-margin-small-top">{{ leads_today }}</div>
+        <div class="uk-text-meta uk-margin-small-top">New Leads Created Today</div>
       </div>
     </div>
     <div>
-      <div class="uk-card uk-card-default uk-card-body">
-         <div class="uk-flex uk-flex-between uk-flex-middle">
-          <div>
-            <div class="uk-text-meta uk-text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.08em;">CRM</div>
-            <div class="uk-text-large uk-text-bold uk-margin-small-top">Leads</div>
-          </div>
-          <div class="uk-icon-button stat-icon" uk-icon="bolt"></div>
+      <div class="stat-card-new">
+        <div class="uk-text-meta uk-text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.08em;">SEO Health</div>
+        <div class="uk-text-large uk-text-bold uk-margin-small-top {{ 'uk-text-danger' if seo_warnings else 'uk-text-success' }}">
+          {{ seo_warnings|length if seo_warnings else 'Healthy' }}
         </div>
-        <div class="uk-margin-small-top">
-           <span class="uk-label uk-label-warning">Coming Soon</span>
+        <div class="uk-text-meta uk-margin-small-top">Optimization Alerts</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="uk-grid-medium uk-margin-large-top" uk-grid>
+    <!-- Revenue Chart -->
+    <div class="uk-width-2-3@l">
+      <div class="uk-card uk-card-default uk-card-body uk-border-rounded">
+        <h3 class="uk-card-title uk-text-bold">Revenue Trend</h3>
+        <div class="chart-container">
+          <canvas id="orderChart"></canvas>
         </div>
       </div>
     </div>
-    <div>
-      <div class="uk-card uk-card-default uk-card-body">
-         <div class="uk-flex uk-flex-between uk-flex-middle">
-          <div>
-            <div class="uk-text-meta uk-text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.08em;">System</div>
-            <div class="uk-text-large uk-text-bold uk-margin-small-top">Users</div>
-          </div>
-          <div class="uk-icon-button stat-icon" uk-icon="cog"></div>
-        </div>
-        <div class="uk-margin-small-top">
-           <span class="uk-label uk-label-success">Active</span>
-        </div>
+    
+    <!-- Top Pages -->
+    <div class="uk-width-1-3@l">
+      <div class="uk-card uk-card-default uk-card-body uk-border-rounded">
+        <h3 class="uk-card-title uk-text-bold">Top Performing Pages</h3>
+        <ul class="uk-list uk-list-divider uk-text-small">
+          {% for p in top_content %}
+          <li>
+            <div class="uk-flex uk-flex-between">
+              <span class="uk-text-truncate" title="{{ p.title }}">{{ p.title }}</span>
+              <span class="uk-text-bold">{{ p.views }} <span class="uk-text-meta" style="font-weight: normal;">views</span></span>
+            </div>
+          </li>
+          {% endfor %}
+          {% if not top_content %}
+          <li class="uk-text-muted uk-text-center">No view data yet.</li>
+          {% endif %}
+        </ul>
       </div>
     </div>
   </div>
 
   <div class="uk-margin-large-top">
-    <div class="uk-card uk-card-default uk-card-body">
+    <div class="uk-card uk-card-default uk-card-body uk-border-rounded">
         <div class="uk-grid-large uk-child-width-1-2@m" uk-grid>
             <div>
                 <h3 class="uk-text-bold">Welcome to your Dashboard</h3>
@@ -73,31 +94,63 @@
                     <div>
                         <a href="{{ url_for('cms.pages_new') }}" class="uk-button uk-button-primary">Create New Page</a>
                     </div>
-                    <div>
-                        <a href="{{ url_for('cms.posts_new') }}" class="uk-button uk-button-default">Write a Post</a>
-                    </div>
                 </div>
             </div>
             <div class="uk-visible@m">
-                <div class="status-panel uk-padding">
-                    <h4 class="uk-text-bold uk-margin-small-bottom">System Status</h4>
-                    <ul class="uk-list uk-list-divider uk-text-small">
-                        <li class="uk-flex uk-flex-between">
-                            <span>Database</span>
-                            <span class="uk-text-success">Connected</span>
-                        </li>
-                        <li class="uk-flex uk-flex-between">
-                            <span>Storage</span>
-                            <span class="uk-text-success">Local OK</span>
-                        </li>
-                        <li class="uk-flex uk-flex-between">
-                            <span>Environment</span>
-                            <span class="uk-text-muted">Development</span>
-                        </li>
-                    </ul>
+                <div class="status-panel uk-padding uk-background-muted uk-border-rounded">
+                    <h4 class="uk-text-bold uk-margin-small-bottom">SEO Detailed Audit</h4>
+                    {% if seo_warnings %}
+                    <div style="max-height: 150px; overflow-y: auto;">
+                        <ul class="uk-list uk-list-bullet uk-text-small">
+                            {% for w in seo_warnings %}
+                            <li class="uk-text-warning">{{ w }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% else %}
+                    <p class="uk-text-small uk-text-success"><span uk-icon="check"></span> All pages look healthy!</p>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
   </div>
+
+  <script>
+    const ctx = document.getElementById('orderChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: {{ order_labels|tojson }},
+        datasets: [{
+          label: 'Revenue ($)',
+          data: {{ order_values|tojson }},
+          borderColor: '#1e87f0',
+          backgroundColor: 'rgba(30, 135, 240, 0.1)',
+          fill: true,
+          tension: 0.4,
+          pointRadius: 4,
+          pointBackgroundColor: '#fff',
+          pointBorderColor: '#1e87f0',
+          pointBorderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true,
+            grid: { color: 'rgba(0,0,0,0.05)' }
+          },
+          x: {
+            grid: { display: false }
+          }
+        },
+        plugins: {
+          legend: { display: false }
+        }
+      }
+    });
+  </script>
 {% endblock %}

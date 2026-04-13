@@ -1,5 +1,7 @@
+{% set shop_cfg = json_loads(site_settings.config_json or '{}') %}
+{% set theme_custom = shop_cfg.get('theme_customization', {}) %}
 <!doctype html>
-<html lang="en">
+<html lang="en" data-canvas-style="{{ theme_custom.get('bg_pattern', 'none') }}" data-glow-style="{{ theme_custom.get('glow_style', 'ambient') }}">
 
 <head>
   <meta charset="utf-8" />
@@ -18,10 +20,10 @@
   {% if seo_desc %}<meta name="description" content="{{ seo_desc }}">{% endif %}
   {% if seo_keys %}<meta name="keywords" content="{{ seo_keys }}">{% endif %}
 
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/uikit@3.21.12/dist/css/uikit.min.css" />
+  <link rel="stylesheet" href="/static/vendor/uikit/uikit.min.css" />
   <link rel="stylesheet" href="/static/theme/css/theme.css" />
-  <script defer src="https://cdn.jsdelivr.net/npm/uikit@3.21.12/dist/js/uikit.min.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/uikit@3.21.12/dist/js/uikit-icons.min.js"></script>
+  <script defer src="/static/vendor/uikit/uikit.min.js"></script>
+  <script defer src="/static/vendor/uikit/uikit-icons.min.js"></script>
 
   {% if site_settings.google_analytics_id %}
   <script async src="https://www.googletagmanager.com/gtag/js?id={{ site_settings.google_analytics_id }}"></script>
@@ -34,6 +36,21 @@
   {% endif %}
 
   {% block head %}{% endblock %}
+
+  {% set custom_font = theme_custom.get('font_main', 'Inter') %}
+  {% if custom_font != 'Inter' %}
+  <link href="https://fonts.googleapis.com/css2?family={{ custom_font.replace(' ', '+') }}:wght@400;700&display=swap" rel="stylesheet">
+  {% endif %}
+
+  <style id="custom-theme-vars">
+    :root {
+        {% if theme_custom.get('primary_color') %}--primary: {{ theme_custom.primary_color }};{% endif %}
+        {% if theme_custom.get('border_radius') %}--radius: {{ theme_custom.border_radius }};{% endif %}
+        {% if theme_custom.get('font_main') %}--font-main: '{{ theme_custom.font_main }}', sans-serif;{% endif %}
+        {% if theme_custom.get('font_heading') %}--font-heading: '{{ theme_custom.font_heading }}', sans-serif;{% endif %}
+    }
+  </style>
+
   <script>
     const userTheme = localStorage.getItem('theme') || 'light';
     if (userTheme === 'dark') {
@@ -42,7 +59,674 @@
   </script>
 </head>
 
-<body>
+<body data-canvas-style="{{ theme_custom.get('bg_pattern', 'none') }}" data-glow-style="{{ theme_custom.get('glow_style', 'ambient') }}">
+  <div id="bg-glow-layer"></div>
+  {% if current_user.is_authenticated and current_user.get_role() == 'admin' %}
+  <!-- Theme Customizer Sidebar -->
+  <div id="theme-customizer" uk-offcanvas="flip: true; overlay: false">
+    <div class="uk-offcanvas-bar uk-padding-medium uk-width-medium customizer-panel">
+      <button class="uk-offcanvas-close" type="button" uk-close></button>
+      <h3 class="uk-text-bold uk-margin-small-bottom">Theme Designer</h3>
+      
+      <ul class="uk-tab uk-child-width-expand uk-margin-small-top" uk-switcher="connect: #customizer-tabs; animation: uk-animation-fade">
+        <li title="Brand & Colors" uk-tooltip><a href="#"><span uk-icon="paint-bucket"></span></a></li>
+        <li title="Layout & Spacing" uk-tooltip><a href="#"><span uk-icon="expand"></span></a></li>
+        <li title="Typography" uk-tooltip><a href="#"><span uk-icon="bolt"></span></a></li>
+        <li title="UI & Effects" uk-tooltip><a href="#"><span uk-icon="cog"></span></a></li>
+      </ul>
+
+      <ul id="customizer-tabs" class="uk-switcher uk-margin-top">
+        <!-- BRAND TAB -->
+        <li>
+            <div class="uk-margin">
+                <label class="uk-form-label uk-text-bold uk-text-small uk-text-uppercase">Primary Accent</label>
+                <div class="uk-margin-small-top uk-flex uk-flex-middle">
+                  <input class="uk-input uk-form-width-small" type="color" id="cust-primary" value="{{ theme_custom.get('primary_color', '#6366f1') }}" style="height: 48px; width: 48px; border-radius: 50% !important;">
+                  <span class="uk-margin-small-left uk-text-muted uk-text-small" id="cust-primary-val">{{ theme_custom.get('primary_color', '#6366f1') }}</span>
+                </div>
+            </div>
+            <div class="uk-margin-medium-top">
+                <label class="uk-form-label uk-text-bold uk-text-small uk-text-uppercase">Secondary Accent</label>
+                <div class="uk-margin-small-top uk-flex uk-flex-middle">
+                  <input class="uk-input uk-form-width-small" type="color" id="cust-secondary" value="{{ theme_custom.get('secondary_color', '#ec4899') }}" style="height: 48px; width: 48px; border-radius: 50% !important;">
+                  <span class="uk-margin-small-left uk-text-muted uk-text-small" id="cust-secondary-val">{{ theme_custom.get('secondary_color', '#ec4899') }}</span>
+                </div>
+            </div>
+            <div class="uk-margin-medium-top uk-grid-small" uk-grid>
+                <div class="uk-width-1-2">
+                    <label class="uk-text-meta uk-text-uppercase" style="font-size: 0.65rem;">Light BG</label>
+                    <input class="uk-input uk-form-small uk-margin-small-top" type="color" id="cust-bg-light" value="{{ theme_custom.get('bg_light', '#ffffff') }}">
+                </div>
+                <div class="uk-width-1-2">
+                    <label class="uk-text-meta uk-text-uppercase" style="font-size: 0.65rem;">Light Text</label>
+                    <input class="uk-input uk-form-small uk-margin-small-top" type="color" id="cust-text-light" value="{{ theme_custom.get('text_light', '#333333') }}">
+                </div>
+                <div class="uk-width-1-2">
+                    <label class="uk-text-meta uk-text-uppercase" style="font-size: 0.65rem;">Dark BG</label>
+                    <input class="uk-input uk-form-small uk-margin-small-top" type="color" id="cust-bg-dark" value="{{ theme_custom.get('bg_dark', '#111827') }}">
+                </div>
+                <div class="uk-width-1-2">
+                    <label class="uk-text-meta uk-text-uppercase" style="font-size: 0.65rem;">Dark Text</label>
+                    <input class="uk-input uk-form-small uk-margin-small-top" type="color" id="cust-text-dark" value="{{ theme_custom.get('text_dark', '#f3f4f6') }}">
+                </div>
+                <div class="uk-width-1-1 uk-margin-medium-top">
+                    <hr>
+                    <label class="uk-form-label uk-text-bold uk-text-small uk-text-uppercase">Gradient Stops</label>
+                </div>
+                <div class="uk-width-1-2">
+                    <label class="uk-text-meta uk-text-uppercase" style="font-size: 0.65rem;">Light Stop 1</label>
+                    <input class="uk-input uk-form-small uk-margin-small-top" type="color" id="cust-grad-1-light" value="{{ theme_custom.get('grad_color_1_light', '#e0e7ff') }}">
+                </div>
+                <div class="uk-width-1-2">
+                    <label class="uk-text-meta uk-text-uppercase" style="font-size: 0.65rem;">Light Stop 2</label>
+                    <input class="uk-input uk-form-small uk-margin-small-top" type="color" id="cust-grad-2-light" value="{{ theme_custom.get('grad_color_2_light', '#fae8ff') }}">
+                </div>
+                <div class="uk-width-1-2">
+                    <label class="uk-text-meta uk-text-uppercase" style="font-size: 0.65rem;">Dark Stop 1</label>
+                    <input class="uk-input uk-form-small uk-margin-small-top" type="color" id="cust-grad-1-dark" value="{{ theme_custom.get('grad_color_1_dark', '#312e81') }}">
+                </div>
+                <div class="uk-width-1-2">
+                    <label class="uk-text-meta uk-text-uppercase" style="font-size: 0.65rem;">Dark Stop 2</label>
+                    <input class="uk-input uk-form-small uk-margin-small-top" type="color" id="cust-grad-2-dark" value="{{ theme_custom.get('grad_color_2_dark', '#831843') }}">
+                </div>
+            </div>
+        </li>
+
+        <!-- LAYOUT TAB -->
+        <li>
+            <div class="uk-margin">
+                <div class="uk-flex uk-flex-between">
+                    <label class="uk-form-label uk-text-bold uk-text-small uk-text-uppercase">Container Max Width</label>
+                    <span class="uk-text-meta" id="cust-width-val">{{ theme_custom.get('container_width', '1200px') }}</span>
+                </div>
+                <input class="uk-range uk-margin-small-top" type="range" id="cust-width" min="800" max="1600" step="50" value="{{ theme_custom.get('container_width', '1200px').replace('px','') }}">
+            </div>
+            <div class="uk-margin-large-top">
+                <div class="uk-flex uk-flex-between">
+                    <label class="uk-form-label uk-text-bold uk-text-small uk-text-uppercase">Global Corner Radius</label>
+                    <span class="uk-badge" id="cust-radius-val">{{ theme_custom.get('border_radius', '8px') }}</span>
+                </div>
+                <input class="uk-range uk-margin-small-top" type="range" id="cust-radius" min="0" max="30" step="1" value="{{ theme_custom.get('border_radius', '8px').replace('px','') }}">
+            </div>
+            <div class="uk-margin-large-top">
+                <div class="uk-flex uk-flex-between">
+                    <label class="uk-form-label uk-text-bold uk-text-small uk-text-uppercase">Vertical Spacing</label>
+                    <span class="uk-badge" id="cust-spacing-y-val">{{ theme_custom.get('spacing_y', '40px') }}</span>
+                </div>
+                <input class="uk-range uk-margin-small-top" type="range" id="cust-spacing-y" min="20" max="100" step="5" value="{{ theme_custom.get('spacing_y', '40px').replace('px','') }}">
+            </div>
+            <div class="uk-margin-large-top">
+                <div class="uk-flex uk-flex-between">
+                    <label class="uk-form-label uk-text-bold uk-text-small uk-text-uppercase">Navbar Height</label>
+                    <span class="uk-badge" id="cust-nav-height-val">{{ theme_custom.get('nav_height', '80px') }}</span>
+                </div>
+                <input class="uk-range uk-margin-small-top" type="range" id="cust-nav-height" min="60" max="140" step="5" value="{{ theme_custom.get('nav_height', '80px').replace('px','') }}">
+            </div>
+        </li>
+
+        <!-- TYPOGRAPHY TAB -->
+        <li>
+            <div class="uk-margin">
+                <label class="uk-form-label uk-text-bold uk-text-small uk-text-uppercase">Heading Font</label>
+                <select class="uk-select uk-margin-small-top font-selector" id="cust-font-heading">
+                    {% for font in ['Inter', 'Roboto', 'Montserrat', 'Playfair Display', 'Outfit', 'Space Grotesk', 'Lexend', 'Lora', 'Merriweather'] %}
+                    <option value="{{ font }}" {{ 'selected' if theme_custom.get('font_heading') == font else '' }}>{{ font }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="uk-margin-large-top">
+                <label class="uk-form-label uk-text-bold uk-text-small uk-text-uppercase">Body Font</label>
+                <select class="uk-select uk-margin-small-top font-selector" id="cust-font-main">
+                    {% for font in ['Inter', 'Roboto', 'Open Sans', 'Montserrat', 'Outfit', 'Lexend', 'Source Sans Pro', 'Nunito'] %}
+                    <option value="{{ font }}" {{ 'selected' if theme_custom.get('font_main') == font else '' }}>{{ font }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="uk-margin-large-top">
+                <div class="uk-flex uk-flex-between">
+                    <label class="uk-form-label uk-text-bold uk-text-small uk-text-uppercase">Base Font Size</label>
+                    <span class="uk-badge" id="cust-fontsize-val">{{ theme_custom.get('base_font_size', '16px') }}</span>
+                </div>
+                <input class="uk-range uk-margin-small-top" type="range" id="cust-fontsize" min="12" max="22" step="1" value="{{ theme_custom.get('base_font_size', '16px').replace('px','') }}">
+            </div>
+            <div class="uk-margin-medium-top uk-grid-small" uk-grid>
+                <div class="uk-width-1-2">
+                    <label class="uk-text-meta uk-text-uppercase" style="font-size: 0.65rem;">Heading Weight</label>
+                    <select class="uk-select uk-form-small uk-margin-small-top" id="cust-heading-weight">
+                        <option value="400" {{ 'selected' if theme_custom.get('heading_weight') == '400' else '' }}>Normal (400)</option>
+                        <option value="600" {{ 'selected' if theme_custom.get('heading_weight') == '600' else '' }}>SemiBold (600)</option>
+                        <option value="700" {{ 'selected' if theme_custom.get('heading_weight') == '700' else '' }}>Bold (700)</option>
+                        <option value="800" {{ 'selected' if theme_custom.get('heading_weight') == '800' else '' }}>ExtraBold (800)</option>
+                    </select>
+                </div>
+                <div class="uk-width-1-2">
+                    <label class="uk-text-meta uk-text-uppercase" style="font-size: 0.65rem;">Line Height</label>
+                    <select class="uk-select uk-form-small uk-margin-small-top" id="cust-line-height">
+                        <option value="1.4" {{ 'selected' if theme_custom.get('line_height') == '1.4' else '' }}>Tight (1.4)</option>
+                        <option value="1.6" {{ 'selected' if theme_custom.get('line_height') == '1.6' else '' }}>Normal (1.6)</option>
+                        <option value="1.8" {{ 'selected' if theme_custom.get('line_height') == '1.8' else '' }}>Relaxed (1.8)</option>
+                    </select>
+                </div>
+                <div class="uk-width-1-1">
+                    <label class="uk-text-meta uk-text-uppercase" style="font-size: 0.65rem;">Letter Spacing</label>
+                    <select class="uk-select uk-form-small uk-margin-small-top" id="cust-letter-spacing">
+                        <option value="-1px" {{ 'selected' if theme_custom.get('letter_spacing') == '-1px' else '' }}>Tight (-1px)</option>
+                        <option value="normal" {{ 'selected' if theme_custom.get('letter_spacing') == 'normal' else '' }}>Normal</option>
+                        <option value="1px" {{ 'selected' if theme_custom.get('letter_spacing') == '1px' else '' }}>Wide (1px)</option>
+                        <option value="2px" {{ 'selected' if theme_custom.get('letter_spacing') == '2px' else '' }}>Extra Wide (2px)</option>
+                    </select>
+                </div>
+                <div class="uk-width-1-2">
+                    <label class="uk-text-meta uk-text-uppercase" style="font-size: 0.65rem;">Heading Case</label>
+                    <select class="uk-select uk-form-small uk-margin-small-top" id="cust-heading-transform">
+                        <option value="none" {{ 'selected' if theme_custom.get('heading_transform') == 'none' else '' }}>Normal</option>
+                        <option value="uppercase" {{ 'selected' if theme_custom.get('heading_transform') == 'uppercase' else '' }}>UPPERCASE</option>
+                        <option value="capitalize" {{ 'selected' if theme_custom.get('heading_transform') == 'capitalize' else '' }}>Capitalize</option>
+                    </select>
+                </div>
+                <div class="uk-width-1-2">
+                    <label class="uk-text-meta uk-text-uppercase" style="font-size: 0.65rem;">Link Underline</label>
+                    <select class="uk-select uk-form-small uk-margin-small-top" id="cust-link-style">
+                        <option value="none" {{ 'selected' if theme_custom.get('link_style') == 'none' else '' }}>Invisible</option>
+                        <option value="underline" {{ 'selected' if theme_custom.get('link_style') == 'underline' else '' }}>Underlined</option>
+                    </select>
+                </div>
+            </div>
+        </li>
+
+        <!-- EFFECTS TAB -->
+        <li>
+            <div class="uk-margin">
+                <label class="uk-form-label uk-text-bold uk-text-small uk-text-uppercase">Card Shadow</label>
+                <select class="uk-select uk-margin-small-top" id="cust-shadow">
+                    <option value="none" {{ 'selected' if theme_custom.get('card_shadow') == 'none' else '' }}>None (Flat)</option>
+                    <option value="shadow" {{ 'selected' if theme_custom.get('card_shadow') == 'shadow' else '' }}>Subtle Shadow</option>
+                    <option value="large" {{ 'selected' if theme_custom.get('card_shadow') == 'large' else '' }}>Pronounced Depth</option>
+                </select>
+            </div>
+            <div class="uk-margin-medium-top">
+                <label class="uk-form-label uk-text-bold uk-text-small uk-text-uppercase">Card Border Width</label>
+                <select class="uk-select uk-margin-small-top" id="cust-card-border-width">
+                    <option value="0px" {{ 'selected' if theme_custom.get('card_border_width') == '0px' else '' }}>None (0px)</option>
+                    <option value="1px" {{ 'selected' if theme_custom.get('card_border_width') == '1px' else '' }}>Subtle (1px)</option>
+                    <option value="2px" {{ 'selected' if theme_custom.get('card_border_width') == '2px' else '' }}>Bold (2px)</option>
+                </select>
+            </div>
+            <div class="uk-margin-medium-top">
+                <label class="uk-form-label uk-text-bold uk-text-small uk-text-uppercase">Navbar Style</label>
+                <select class="uk-select uk-margin-small-top" id="cust-nav-style">
+                    <option value="default" {{ 'selected' if theme_custom.get('nav_style') == 'default' else '' }}>Standard Solid</option>
+                    <option value="glass" {{ 'selected' if theme_custom.get('nav_style') == 'glass' else '' }}>Glassmorphism</option>
+                </select>
+            </div>
+            <div class="uk-margin-medium-top">
+                <label class="uk-form-label uk-text-bold uk-text-small uk-text-uppercase">Button Style</label>
+                <select class="uk-select uk-margin-small-top" id="cust-btn-style">
+                    <option value="standard" {{ 'selected' if theme_custom.get('button_style') == 'standard' else '' }}>Standard</option>
+                    <option value="pill" {{ 'selected' if theme_custom.get('button_style') == 'pill' else '' }}>Pill Shape</option>
+                    <option value="square" {{ 'selected' if theme_custom.get('button_style') == 'square' else '' }}>Square Corners</option>
+                </select>
+            </div>
+            <div class="uk-margin-medium-top">
+                <label class="uk-form-label uk-text-bold uk-text-small uk-text-uppercase">Input Field Style</label>
+                <select class="uk-select uk-margin-small-top" id="cust-input-style">
+                    <option value="default" {{ 'selected' if theme_custom.get('input_style') == 'default' else '' }}>Standard Box</option>
+                    <option value="underlined" {{ 'selected' if theme_custom.get('input_style') == 'underlined' else '' }}>Underlined</option>
+                    <option value="filled" {{ 'selected' if theme_custom.get('input_style') == 'filled' else '' }}>Filled background</option>
+                </select>
+            </div>
+            <div class="uk-margin-medium-top">
+                <label class="uk-form-label uk-text-bold uk-text-small uk-text-uppercase">Animation Speed</label>
+                <select class="uk-select uk-margin-small-top" id="cust-anim-speed">
+                    <option value="0.5s" {{ 'selected' if theme_custom.get('animation_speed') == '0.5s' else '' }}>Relaxed (0.5s)</option>
+                    <option value="0.2s" {{ 'selected' if theme_custom.get('animation_speed') == '0.2s' else '' }}>Snappy (0.2s)</option>
+                    <option value="0s" {{ 'selected' if theme_custom.get('animation_speed') == '0s' else '' }}>Instant (0s)</option>
+                </select>
+            </div>
+            <div class="uk-margin-medium-top">
+                <label class="uk-form-label uk-text-bold uk-text-small uk-text-uppercase">Background Canvas</label>
+                <select class="uk-select uk-margin-small-top" id="cust-bg-pattern">
+                    <option value="none" {{ 'selected' if theme_custom.get('bg_pattern') == 'none' else '' }}>Flat Color</option>
+                    <option value="radial-gradient(var(--text-muted) 1px, transparent 1px)" {{ 'selected' if 'radial-gradient' in theme_custom.get('bg_pattern', '') else '' }}>Dot Grid</option>
+                    <option value="linear-gradient(var(--border-color) 1px, transparent 1px), linear-gradient(90deg, var(--border-color) 1px, transparent 1px)" {{ 'selected' if 'linear-gradient' in theme_custom.get('bg_pattern', '') and 'var(--border-color)' in theme_custom.get('bg_pattern', '') else '' }}>Graph Grid</option>
+                    <option value="linear-gradient(var(--gradient-angle), var(--bg-main) 0%, var(--grad-1) 45%, var(--grad-2) 50%, var(--grad-1) 55%, var(--bg-main) 100%)" {{ 'selected' if 'var(--gradient-angle)' in theme_custom.get('bg_pattern', '') else '' }}>Animated Gradient</option>
+                    <option value="glowing" {{ 'selected' if theme_custom.get('bg_pattern') == 'glowing' else '' }}>Glowing Gradient</option>
+                </select>
+
+                <div class="uk-margin-small-top" id="glow-controls" style="{{ 'display: block;' if theme_custom.get('bg_pattern') == 'glowing' else 'display: none;' }}">
+                    <label class="uk-text-meta uk-text-uppercase" style="font-size: 0.65rem;">Glow Preset</label>
+                    <select class="uk-select uk-form-small uk-margin-small-top" id="cust-glow-preset">
+                        <option value="ambient" {{ 'selected' if theme_custom.get('glow_style', 'ambient') == 'ambient' else '' }}>Ambient Mist</option>
+                        <option value="aurora" {{ 'selected' if theme_custom.get('glow_style') == 'aurora' else '' }}>Aurora Rise</option>
+                        <option value="spotlight" {{ 'selected' if theme_custom.get('glow_style') == 'spotlight' else '' }}>Focused Glow</option>
+                    </select>
+                </div>
+
+                <div class="uk-margin-small-top uk-grid-small" uk-grid id="gradient-controls" style="{{ 'display: flex;' if 'var(--gradient-angle)' in theme_custom.get('bg_pattern', '') else 'display: none;' }}">
+                    <div class="uk-width-1-2">
+                        <label class="uk-text-meta uk-text-uppercase" style="font-size: 0.65rem;">Gradient Speed</label>
+                        <select class="uk-select uk-form-small uk-margin-small-top" id="cust-gradient-speed">
+                            <option value="60s" {{ 'selected' if theme_custom.get('gradient_speed') == '60s' else '' }}>Very Slow (60s)</option>
+                            <option value="30s" {{ 'selected' if theme_custom.get('gradient_speed') == '30s' else '' }}>Slow (30s)</option>
+                            <option value="15s" {{ 'selected' if theme_custom.get('gradient_speed', '15s') == '15s' else '' }}>Normal (15s)</option>
+                            <option value="5s" {{ 'selected' if theme_custom.get('gradient_speed') == '5s' else '' }}>Fast (5s)</option>
+                        </select>
+                    </div>
+                    <div class="uk-width-1-2">
+                        <label class="uk-text-meta uk-text-uppercase" style="font-size: 0.65rem;">Gradient Angle</label>
+                        <select class="uk-select uk-form-small uk-margin-small-top" id="cust-gradient-angle">
+                            <option value="-45deg" {{ 'selected' if theme_custom.get('gradient_angle', '-45deg') == '-45deg' else '' }}>Diagonal</option>
+                            <option value="90deg" {{ 'selected' if theme_custom.get('gradient_angle') == '90deg' else '' }}>Horizontal</option>
+                            <option value="180deg" {{ 'selected' if theme_custom.get('gradient_angle') == '180deg' else '' }}>Vertical</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </li>
+      </ul>
+
+      <div class="uk-margin-large-top">
+        <button class="uk-button uk-button-primary uk-width-1-1 uk-button-large" id="save-theme-btn" style="border-radius: 50px !important;">
+            <span uk-icon="check" class="uk-margin-small-right"></span> Save Changes
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <style id="custom-theme-overrides">
+    html {
+        background-color: var(--bg-main);
+        min-height: 100%;
+    }
+    :root {
+        {% if theme_custom.get('primary_color') %}--primary: {{ theme_custom.primary_color }};{% endif %}
+        {% if theme_custom.get('secondary_color') %}--secondary: {{ theme_custom.secondary_color }};{% endif %}
+        
+        {% if theme_custom.get('bg_light') %}--bg-main: {{ theme_custom.bg_light }};{% endif %}
+        {% if theme_custom.get('text_light') %}--text-main: {{ theme_custom.text_light }};{% endif %}
+        {% if theme_custom.get('grad_color_1_light') %}--grad-1: {{ theme_custom.grad_color_1_light }};{% else %}--grad-1: var(--primary);{% endif %}
+        {% if theme_custom.get('grad_color_2_light') %}--grad-2: {{ theme_custom.grad_color_2_light }};{% else %}--grad-2: var(--secondary);{% endif %}
+        
+        {% if theme_custom.get('border_radius') %}--radius: {{ theme_custom.border_radius }};{% endif %}
+        {% if theme_custom.get('font_main') %}--font-main: '{{ theme_custom.font_main }}', sans-serif;{% endif %}
+        {% if theme_custom.get('font_heading') %}--font-heading: '{{ theme_custom.font_heading }}', sans-serif;{% endif %}
+        {% if theme_custom.get('heading_weight') %}--heading-weight: {{ theme_custom.heading_weight }};{% endif %}
+        {% if theme_custom.get('line_height') %}--line-height: {{ theme_custom.line_height }};{% endif %}
+        {% if theme_custom.get('letter_spacing') %}--letter-spacing: {{ theme_custom.letter_spacing }};{% endif %}
+        {% if theme_custom.get('heading_transform') %}--heading-transform: {{ theme_custom.heading_transform }};{% endif %}
+        {% if theme_custom.get('link_style') %}--link-decoration: {{ theme_custom.link_style }};{% endif %}
+        {% if theme_custom.get('card_border_width') %}--card-border-width: {{ theme_custom.card_border_width }};{% endif %}
+        {% if theme_custom.get('base_font_size') %}--font-size-base: {{ theme_custom.base_font_size }};{% endif %}
+        {% if theme_custom.get('container_width') %}--container-width: {{ theme_custom.container_width }};{% endif %}
+        {% if theme_custom.get('nav_height') %}--nav-height: {{ theme_custom.nav_height }};{% endif %}
+        {% if theme_custom.get('animation_speed') %}--animation-speed: {{ theme_custom.animation_speed }};{% endif %}
+        {% if theme_custom.get('spacing_y') %}--spacing-y: {{ theme_custom.spacing_y }};{% endif %}
+        {% if theme_custom.get('bg_pattern') and theme_custom.get('bg_pattern') != 'none' %}
+            --bg-pattern: {{ theme_custom.bg_pattern }};
+        {% else %}
+            --bg-pattern: none;
+        {% endif %}
+        {% if theme_custom.get('gradient_speed') %}--gradient-speed: {{ theme_custom.gradient_speed }};{% endif %}
+        {% if theme_custom.get('gradient_angle') %}--gradient-angle: {{ theme_custom.gradient_angle }};{% endif %}
+        
+        {% if theme_custom.get('card_shadow') == 'none' %}--card-shadow: none;{% elif theme_custom.get('card_shadow') == 'large' %}--card-shadow: 0 10px 40px rgba(0,0,0,0.1);{% endif %}
+        
+        {% if theme_custom.get('button_style') == 'pill' %}--btn-padding: 10px 30px; --radius: 50px;{% elif theme_custom.get('button_style') == 'square' %}--radius: 0px;{% endif %}
+        
+        {% if theme_custom.get('input_style') == 'underlined' %}
+            --input-border-width: 0 0 2px 0; --input-bg: transparent; --radius: 0px;
+        {% elif theme_custom.get('input_style') == 'filled' %}
+            --input-bg: var(--border-color); --input-border-width: 0;
+        {% endif %}
+    }
+    
+    html[data-theme="dark"] {
+        {% if theme_custom.get('bg_dark') %}--bg-main: {{ theme_custom.bg_dark }} !important;{% endif %}
+        {% if theme_custom.get('text_dark') %}--text-main: {{ theme_custom.text_dark }} !important;{% endif %}
+        {% if theme_custom.get('grad_color_1_dark') %}--grad-1: {{ theme_custom.grad_color_1_dark }} !important;{% else %}--grad-1: #6366f1 !important;{% endif %}
+        {% if theme_custom.get('grad_color_2_dark') %}--grad-2: {{ theme_custom.grad_color_2_dark }} !important;{% else %}--grad-2: #ec4899 !important;{% endif %}
+    }
+    
+    @keyframes themeGlowAnimation {
+        0% { transform: translate3d(0, 0, 0) scale(1); }
+        33% { transform: translate3d(5%, 5%, 0) scale(1.05); }
+        66% { transform: translate3d(-5%, 2%, 0) scale(0.98); }
+        100% { transform: translate3d(0, 0, 0) scale(1); }
+    }
+
+    #bg-glow-layer {
+        position: fixed;
+        top: -10%; left: -10%; right: -10%; bottom: -10%;
+        z-index: -1;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 1.5s ease;
+        filter: blur(60px);
+        transform: translate3d(0,0,0);
+        animation: themeGlowAnimation 40s infinite alternate linear;
+        background-attachment: fixed;
+    }
+
+    [data-canvas-style="glowing"] #bg-glow-layer { 
+        opacity: 0.4; 
+    }
+    html[data-theme="dark"][data-canvas-style="glowing"] #bg-glow-layer { 
+        opacity: 0.5; 
+        z-index: 0 !important;
+        mix-blend-mode: screen !important;
+        filter: blur(50px) brightness(1.2);
+    }
+
+    [data-glow-style="ambient"] #bg-glow-layer {
+        background: 
+            radial-gradient(circle at 30% 30%, var(--grad-1) 0%, transparent 60%),
+            radial-gradient(circle at 70% 70%, var(--grad-2) 10%, transparent 60%),
+            radial-gradient(circle at 50% 10%, var(--grad-1) 0%, transparent 50%);
+    }
+
+    [data-glow-style="aurora"] #bg-glow-layer {
+        background: 
+            radial-gradient(ellipse at 50% 100%, var(--grad-1) 0%, transparent 80%),
+            radial-gradient(ellipse at 15% 90%, var(--grad-2) 0%, transparent 65%),
+            radial-gradient(ellipse at 85% 90%, var(--grad-1) 0%, transparent 65%);
+    }
+
+    [data-glow-style="spotlight"] #bg-glow-layer {
+        background: 
+            radial-gradient(circle at 50% 50%, var(--grad-1) 0%, transparent 80%),
+            radial-gradient(circle at 50% 50%, var(--grad-2) 20%, transparent 90%);
+    }
+    
+    body {
+        margin: 0;
+        min-height: 100vh;
+        background-color: transparent !important;
+        background-attachment: fixed !important;
+        background-repeat: no-repeat;
+        {% if 'var(--gradient-angle)' in theme_custom.get('bg_pattern', '') %}
+            background-size: 600% 600% !important;
+            animation: themeGradientAnimation var(--gradient-speed) ease infinite !important;
+        {% elif theme_custom.get('bg_pattern') and theme_custom.get('bg_pattern') != 'none' and theme_custom.get('bg_pattern') != 'glowing' %}
+            background-size: 20px 20px !important;
+        {% endif %}
+    }
+    
+    {% if theme_custom.get('nav_style') == 'glass' %}
+    .uk-navbar-container {
+        background: rgba(255, 255, 255, 0.7) !important;
+        backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    }
+    html[data-theme="dark"] .uk-navbar-container { background: rgba(31, 41, 55, 0.7) !important; }
+    {% endif %}
+    
+    .customizer-panel { 
+        background: #f8fafc !important; 
+        color: #1e293b !important; 
+        border-left: 1px solid #e2e8f0; 
+        box-shadow: -5px 0 25px rgba(0,0,0,0.1);
+    }
+    html[data-theme="dark"] .customizer-panel { 
+        background: #0f172a !important; 
+        color: #f1f5f9 !important; 
+        border-left: 1px solid #1e293b;
+    }
+    
+    /* Aggressive visibility forcing */
+    html:not([data-theme="dark"]) .customizer-panel h3, 
+    html:not([data-theme="dark"]) .customizer-panel label, 
+    html:not([data-theme="dark"]) .customizer-panel span, 
+    html:not([data-theme="dark"]) .customizer-panel p,
+    html:not([data-theme="dark"]) .customizer-panel div { 
+        color: #1e293b !important; 
+    }
+    html[data-theme="dark"] .customizer-panel h3, 
+    html[data-theme="dark"] .customizer-panel label, 
+    html[data-theme="dark"] .customizer-panel span, 
+    html[data-theme="dark"] .customizer-panel p,
+    html[data-theme="dark"] .customizer-panel div { 
+        color: #f1f5f9 !important; 
+    }
+
+    .customizer-panel .uk-form-label { opacity: 0.8; }
+    .customizer-panel .uk-text-muted { opacity: 0.6; }
+    .customizer-panel .uk-input, .customizer-panel .uk-select { 
+        background: #ffffff !important; 
+        border: 1px solid #cbd5e1 !important; 
+        color: #1e293b !important; 
+    }
+    .customizer-panel select option { color: #1e293b !important; background: #ffffff !important; }
+    html[data-theme="dark"] .customizer-panel .uk-input, 
+    html[data-theme="dark"] .customizer-panel .uk-select { 
+        background: #1e293b !important; 
+        border: 1px solid #334155 !important; 
+        color: #f1f5f9 !important; 
+    }
+    html[data-theme="dark"] .customizer-panel select option { color: #ffffff !important; background: #1e293b !important; }
+    .customizer-panel .uk-tab > li > a { color: inherit !important; opacity: 0.5; border-bottom-color: transparent; }
+    .customizer-panel .uk-tab > li.uk-active > a { color: var(--primary) !important; opacity: 1; border-bottom-color: var(--primary); }
+    .customizer-panel .uk-offcanvas-close { color: inherit !important; }
+
+    /* Fix user spacing updates dynamically */
+    .uk-section, .uk-padding { padding-top: var(--spacing-y) !important; padding-bottom: var(--spacing-y) !important; }
+  </style>
+
+  <!-- Floating Customizer Button -->
+  <div style="position: fixed; bottom: 30px; right: 30px; z-index: 1000;">
+    <button class="uk-button uk-button-primary uk-border-pill shadow-lg" uk-toggle="target: #theme-customizer" style="padding: 0 25px; height: 50px; line-height: 50px; text-transform: none; font-weight: bold; border-radius: 25px !important;">
+      <span uk-icon="paint-bucket" class="uk-margin-small-right"></span> Design Mode
+    </button>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const root = document.documentElement;
+        
+        // Element Links
+        const colorInput = document.getElementById('cust-primary');
+        const colorVal = document.getElementById('cust-primary-val');
+        const secondaryInput = document.getElementById('cust-secondary');
+        const secondaryVal = document.getElementById('cust-secondary-val');
+        
+        const bgLight = document.getElementById('cust-bg-light');
+        const textLight = document.getElementById('cust-text-light');
+        const bgDark = document.getElementById('cust-bg-dark');
+        const textDark = document.getElementById('cust-text-dark');
+        
+        const radiusInput = document.getElementById('cust-radius');
+        const radiusVal = document.getElementById('cust-radius-val');
+        const widthInput = document.getElementById('cust-width');
+        const widthVal = document.getElementById('cust-width-val');
+        const spacingInput = document.getElementById('cust-spacing-y');
+        const spacingVal = document.getElementById('cust-spacing-y-val');
+        const fontsizeInput = document.getElementById('cust-fontsize');
+        const fontsizeVal = document.getElementById('cust-fontsize-val');
+        const navHeightInput = document.getElementById('cust-nav-height');
+        const navHeightVal = document.getElementById('cust-nav-height-val');
+        
+        const saveBtn = document.getElementById('save-theme-btn');
+
+        const updateProp = (prop, val) => root.style.setProperty(prop, val);
+
+        // Value Updaters
+        colorInput.addEventListener('input', (e) => {
+            updateProp('--primary', e.target.value);
+            colorVal.innerText = e.target.value.toUpperCase();
+        });
+        secondaryInput.addEventListener('input', (e) => {
+            updateProp('--secondary', e.target.value);
+            secondaryVal.innerText = e.target.value.toUpperCase();
+        });
+        
+        bgLight.addEventListener('input', (e) => { if (!root.hasAttribute('data-theme') || root.getAttribute('data-theme') !== 'dark') updateProp('--bg-main', e.target.value); });
+        textLight.addEventListener('input', (e) => { if (!root.hasAttribute('data-theme') || root.getAttribute('data-theme') !== 'dark') updateProp('--text-main', e.target.value); });
+        bgDark.addEventListener('input', (e) => { if (root.getAttribute('data-theme') === 'dark') updateProp('--bg-main', e.target.value); });
+        textDark.addEventListener('input', (e) => { if (root.getAttribute('data-theme') === 'dark') updateProp('--text-main', e.target.value); });
+
+        radiusInput.addEventListener('input', (e) => {
+            const val = e.target.value + 'px';
+            updateProp('--radius', val);
+            radiusVal.innerText = val;
+        });
+        widthInput.addEventListener('input', (e) => {
+            const val = e.target.value + 'px';
+            updateProp('--container-width', val);
+            widthVal.innerText = val;
+        });
+        spacingInput.addEventListener('input', (e) => {
+            const val = e.target.value + 'px';
+            updateProp('--spacing-y', val);
+            spacingVal.innerText = val;
+        });
+        fontsizeInput.addEventListener('input', (e) => {
+            const val = e.target.value + 'px';
+            updateProp('--font-size-base', val);
+            fontsizeVal.innerText = val;
+        });
+        navHeightInput.addEventListener('input', (e) => {
+            const val = e.target.value + 'px';
+            updateProp('--nav-height', val);
+            navHeightVal.innerText = val;
+        });
+
+        // Font Dynamic Loading
+        document.querySelectorAll('.font-selector').forEach(sel => {
+            sel.addEventListener('change', (e) => {
+                const font = e.target.value;
+                const prop = e.target.id === 'cust-font-main' ? '--font-main' : '--font-heading';
+                const link = document.createElement('link');
+                link.href = `https://fonts.googleapis.com/css2?family=${font.replace(/ /g, '+')}:wght@400;700&display=swap`;
+                link.rel = 'stylesheet';
+                document.head.appendChild(link);
+                updateProp(prop, `'${font}', sans-serif`);
+            });
+        });
+
+        // Select Change Listeners
+        document.getElementById('cust-grad-1-light').addEventListener('input', (e) => { if(document.documentElement.getAttribute('data-theme')!=='dark') updateProp('--grad-1', e.target.value) });
+        document.getElementById('cust-grad-2-light').addEventListener('input', (e) => { if(document.documentElement.getAttribute('data-theme')!=='dark') updateProp('--grad-2', e.target.value) });
+        document.getElementById('cust-grad-1-dark').addEventListener('input', (e) => { if (document.documentElement.getAttribute('data-theme') === 'dark') updateProp('--grad-1', e.target.value) });
+        document.getElementById('cust-grad-2-dark').addEventListener('input', (e) => { if (document.documentElement.getAttribute('data-theme') === 'dark') updateProp('--grad-2', e.target.value) });
+
+        document.getElementById('cust-heading-weight').addEventListener('change', (e) => updateProp('--heading-weight', e.target.value));
+        document.getElementById('cust-line-height').addEventListener('change', (e) => updateProp('--line-height', e.target.value));
+        document.getElementById('cust-letter-spacing').addEventListener('change', (e) => updateProp('--letter-spacing', e.target.value));
+        document.getElementById('cust-heading-transform').addEventListener('change', (e) => updateProp('--heading-transform', e.target.value));
+        document.getElementById('cust-link-style').addEventListener('change', (e) => updateProp('--link-decoration', e.target.value));
+        document.getElementById('cust-bg-pattern').addEventListener('change', (e) => {
+            const controls = document.getElementById('gradient-controls');
+            const glowControls = document.getElementById('glow-controls');
+            root.removeAttribute('data-canvas-style');
+            glowControls.style.display = 'none';
+            
+            if (e.target.value.includes('var(--gradient-angle)')) {
+                controls.style.display = 'flex';
+                updateProp('--bg-pattern', e.target.value);
+                document.body.style.backgroundSize = '600% 600%';
+                document.body.style.animation = 'themeGradientAnimation var(--gradient-speed) ease infinite';
+            } else if (e.target.value === 'glowing') {
+                controls.style.display = 'none';
+                glowControls.style.display = 'block';
+                updateProp('--bg-pattern', 'glowing');
+                root.setAttribute('data-canvas-style', 'glowing');
+                document.body.style.backgroundSize = 'auto';
+                document.body.style.animation = 'none';
+            } else if (e.target.value === 'none') {
+                controls.style.display = 'none';
+                updateProp('--bg-pattern', 'none');
+                document.body.style.backgroundSize = 'auto';
+                document.body.style.animation = 'none';
+            } else {
+                controls.style.display = 'none';
+                updateProp('--bg-pattern', e.target.value);
+                document.body.style.backgroundSize = '20px 20px';
+                document.body.style.animation = 'none';
+            }
+        });
+
+        document.getElementById('cust-glow-preset').addEventListener('change', (e) => {
+            root.setAttribute('data-glow-style', e.target.value);
+        });
+
+        document.getElementById('cust-gradient-speed').addEventListener('change', (e) => updateProp('--gradient-speed', e.target.value));
+        document.getElementById('cust-gradient-angle').addEventListener('change', (e) => updateProp('--gradient-angle', e.target.value));
+
+        document.getElementById('cust-shadow').addEventListener('change', (e) => {
+            const val = e.target.value === 'none' ? 'none' : (e.target.value === 'large' ? '0 10px 40px rgba(0,0,0,0.1)' : '0 4px 12px rgba(0,0,0,0.05)');
+            updateProp('--card-shadow', val);
+        });
+        document.getElementById('cust-card-border-width').addEventListener('change', (e) => updateProp('--card-border-width', e.target.value));
+
+        document.getElementById('cust-anim-speed').addEventListener('change', (e) => {
+            updateProp('--animation-speed', e.target.value);
+        });
+
+        document.getElementById('cust-btn-style').addEventListener('change', (e) => {
+            if (e.target.value === 'pill') { updateProp('--radius', '50px'); updateProp('--btn-padding', '10px 30px'); }
+            else if (e.target.value === 'square') { updateProp('--radius', '0px'); }
+            else { updateProp('--radius', radiusInput.value + 'px'); updateProp('--btn-padding', '8px 20px'); }
+        });
+
+        document.getElementById('cust-input-style').addEventListener('change', (e) => {
+            if (e.target.value === 'underlined') { updateProp('--input-border-width', '0 0 2px 0'); updateProp('--input-bg', 'transparent'); }
+            else if (e.target.value === 'filled') { updateProp('--input-bg', 'var(--border-color)'); updateProp('--input-border-width', '0'); }
+            else { updateProp('--input-bg', '#ffffff'); updateProp('--input-border-width', '1px'); } // Assumes light mode roughly for preview
+        });
+
+        document.getElementById('cust-nav-style').addEventListener('change', (e) => {
+            location.reload(); // Hard refresh to apply glassmorphism classes correctly for preview
+        });
+
+        saveBtn.addEventListener('click', async () => {
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<span uk-spinner="ratio: 0.6"></span> Saving...';
+            
+            try {
+                const res = await fetch("{{ url_for('site.theme_customize') }}", {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
+                    body: JSON.stringify({
+                        primary_color: colorInput.value,
+                        secondary_color: secondaryInput.value,
+                        bg_light: bgLight.value,
+                        text_light: textLight.value,
+                        bg_dark: bgDark.value,
+                        text_dark: textDark.value,
+                        grad_color_1_light: document.getElementById('cust-grad-1-light').value,
+                        grad_color_2_light: document.getElementById('cust-grad-2-light').value,
+                        grad_color_1_dark: document.getElementById('cust-grad-1-dark').value,
+                        grad_color_2_dark: document.getElementById('cust-grad-2-dark').value,
+                        glow_style: document.getElementById('cust-glow-preset').value,
+                        border_radius: radiusInput.value + 'px',
+                        font_main: document.getElementById('cust-font-main').value,
+                        font_heading: document.getElementById('cust-font-heading').value,
+                        heading_weight: document.getElementById('cust-heading-weight').value,
+                        line_height: document.getElementById('cust-line-height').value,
+                        letter_spacing: document.getElementById('cust-letter-spacing').value,
+                        heading_transform: document.getElementById('cust-heading-transform').value,
+                        link_style: document.getElementById('cust-link-style').value,
+                        bg_pattern: document.getElementById('cust-bg-pattern').value,
+                        gradient_speed: document.getElementById('cust-gradient-speed').value,
+                        gradient_angle: document.getElementById('cust-gradient-angle').value,
+                        nav_height: document.getElementById('cust-nav-height').value,
+                        card_border_width: document.getElementById('cust-card-border-width').value,
+                        base_font_size: fontsizeInput.value + 'px',
+                        container_width: widthInput.value + 'px',
+                        spacing_y: spacingInput.value + 'px',
+                        card_shadow: document.getElementById('cust-shadow').value,
+                        button_style: document.getElementById('cust-btn-style').value,
+                        input_style: document.getElementById('cust-input-style').value,
+                        nav_style: document.getElementById('cust-nav-style').value,
+                        animation_speed: document.getElementById('cust-anim-speed').value
+                    })
+                });
+                if (res.ok) UIkit.notification({message: 'Theme saved successfully!', status: 'success'});
+            } catch (e) { alert(e); }
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<span uk-icon="check" class="uk-margin-small-right"></span> Save Changes';
+        });
+    });
+  </script>
+  {% endif %}
   {# ─── Top Bar Position ─── #}
   {% set top_bar_html = render_position("top-bar") %}
   {% if top_bar_html %}
@@ -95,6 +779,10 @@
             {% else %}
             {{ default_menu_html | safe }}
             {% endif %}
+
+            <a class="uk-navbar-item uk-position-relative" href="{{ url_for('site.search') }}" title="Search" style="padding-right: 15px;">
+              <span uk-icon="icon: search; ratio: 1.1"></span>
+            </a>
 
             <a class="uk-navbar-item uk-position-relative" href="{{ url_for('shop.account') if current_user.is_authenticated else url_for('shop.login') }}" title="My Account" style="padding-right: 15px;">
               <span uk-icon="icon: user; ratio: 1.1"></span>

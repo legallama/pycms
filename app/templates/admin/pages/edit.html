@@ -5,6 +5,14 @@
 
 {% block head %}
   <script src="https://cdn.jsdelivr.net/npm/tinymce@6.8.5/tinymce.min.js" referrerpolicy="origin"></script>
+  <style>
+    .ai-loading { position: relative; opacity: 0.6; pointer-events: none; }
+    .ai-loading::after {
+      content: "AI Processing...";
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      background: rgba(0,0,0,0.8); color: #fff; padding: 10px 20px; border-radius: 8px; z-index: 1000;
+    }
+  </style>
   <script>
     document.addEventListener("DOMContentLoaded", function () {
       tinymce.init({
@@ -12,7 +20,19 @@
         height: 520,
         menubar: false,
         plugins: "link lists code table image",
-        toolbar: "undo redo | blocks | bold italic | bullist numlist | link image table | code",
+        toolbar: "undo redo | blocks | bold italic | bullist numlist | link image table | code | ai_tools",
+        setup: function (editor) {
+            editor.ui.registry.addMenuButton('ai_tools', {
+                text: 'AI Assistant',
+                fetch: function (callback) {
+                    var items = [
+                        { type: 'menuitem', text: 'Rewrite: Professional', onAction: () => ai_fn('rewrite', 'professional') },
+                        { type: 'menuitem', text: 'Rewrite: Shorter', onAction: () => ai_fn('rewrite', 'shorter') },
+                    ];
+                    callback(items);
+                }
+            });
+        },
         image_title: true,
         automatic_uploads: true,
         file_picker_types: 'image',
@@ -29,7 +49,7 @@
           );
 
           window.addEventListener('message', function handler(e) {
-            if (e.data.mceAction === 'insertImage') {
+            if (e.data.url) {
               cb(e.data.url, { title: 'Image' });
               window.removeEventListener('message', handler);
             }
@@ -37,11 +57,63 @@
         }
       });
     });
+
+    async function ai_fn(action, mode = '') {
+        const bodyInput = document.getElementById('body_html');
+        const editor = tinymce.get('body_html');
+        let text = action === 'rewrite' ? editor.selection.getContent({format: 'text'}) : editor.getContent({format: 'text'});
+        
+        if (action === 'rewrite' && !text) {
+            alert("Please highlight text to rewrite.");
+            return;
+        }
+
+        if (action === 'generate') {
+            const prompt = prompt("What should this page/post be about?");
+            if (!prompt) return;
+            text = prompt;
+        }
+
+        document.body.classList.add('ai-loading');
+        try {
+            const res = await fetch("{{ url_for('admin.ai_process') }}", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
+                body: JSON.stringify({ action, text, mode })
+            });
+            const data = await res.json();
+            
+            if (action === 'rewrite') {
+                editor.selection.setContent(data.result);
+            } else if (action === 'generate') {
+                editor.setContent(data.result);
+            } else if (action === 'seo') {
+                const parts = data.result.split('\n');
+                parts.forEach(p => {
+                    if (p.startsWith('DESCRIPTION:')) document.getElementById('meta_description').value = p.replace('DESCRIPTION:', '').trim();
+                    if (p.startsWith('KEYWORDS:')) document.getElementById('meta_keywords').value = p.replace('KEYWORDS:', '').trim();
+                });
+                UIkit.notification({message: 'SEO tags updated!', status: 'success'});
+            }
+        } catch (e) {
+            alert("AI Error: " + e);
+        }
+        document.body.classList.remove('ai-loading');
+    }
   </script>
 {% endblock %}
 
 {% block content %}
   <div class="uk-card uk-card-default uk-card-body">
+    <div class="uk-flex uk-flex-between uk-flex-middle uk-margin-bottom">
+        <h3 class="uk-card-title uk-margin-remove">{{ "Edit Page" if page else "New Page" }}</h3>
+        <div>
+            <button type="button" class="uk-button uk-button-default uk-button-small" onclick="ai_fn('generate')">
+                <span uk-icon="bolt"></span> AI Generate Draft
+            </button>
+        </div>
+    </div>
+    
     <form method="post" novalidate>
       {{ form.hidden_tag() }}
 
@@ -77,16 +149,6 @@
         </div>
       </div>
 
-      <div class="uk-margin uk-grid-small uk-child-width-1-2@m" uk-grid>
-        <div>
-          <label class="uk-form-label" for="menu_id">Assigned Menu</label>
-          <div class="uk-form-controls">
-            {{ form.menu_id(class_="uk-select", id="menu_id") }}
-            <p class="uk-text-meta">Leave as 'Default' to use system main menu.</p>
-          </div>
-        </div>
-      </div>
-
       <div class="uk-margin">
         <label class="uk-form-label" for="body_html">Body</label>
         <div class="uk-form-controls">
@@ -95,32 +157,30 @@
       </div>
 
       <div class="uk-margin">
-        <ul uk-accordion="collapsible: true">
-          <li>
-            <a class="uk-accordion-title" href="#">SEO Settings</a>
-            <div class="uk-accordion-content">
-              <div class="uk-margin">
-                <label class="uk-form-label" for="meta_description">Meta Description</label>
-                <div class="uk-form-controls">
-                  {{ form.meta_description(class_="uk-textarea", id="meta_description", rows="2", placeholder="Brief description for search engines (150-160 chars)") }}
-                </div>
-              </div>
-              <div class="uk-margin">
-                <label class="uk-form-label" for="meta_keywords">Meta Keywords</label>
-                <div class="uk-form-controls">
-                  {{ form.meta_keywords(class_="uk-input", id="meta_keywords", placeholder="keyword1, keyword2, keyword3") }}
-                </div>
-              </div>
+        <div class="uk-card uk-card-default uk-card-body uk-card-small uk-background-muted">
+            <div class="uk-flex uk-flex-between uk-flex-middle">
+                <h4 class="uk-text-bold uk-margin-remove">SEO & Meta Tags</h4>
+                <button type="button" class="uk-button uk-button-primary uk-button-small" onclick="ai_fn('seo', tinymce.get('body_html').getContent({format: 'text'}))">
+                   <span uk-icon="magic"></span> Auto-Fill with AI
+                </button>
             </div>
-          </li>
-        </ul>
+            <div class="uk-margin-top uk-grid-small" uk-grid>
+                <div class="uk-width-1-1">
+                    <label class="uk-form-label">Meta Description</label>
+                    {{ form.meta_description(class_="uk-textarea", id="meta_description", rows="2") }}
+                </div>
+                <div class="uk-width-1-1">
+                    <label class="uk-form-label">Meta Keywords</label>
+                    {{ form.meta_keywords(class_="uk-input", id="meta_keywords") }}
+                </div>
+            </div>
+        </div>
       </div>
 
       <div class="uk-margin uk-flex uk-flex-between">
         <a class="uk-button uk-button-default" href="{{ url_for('cms.pages_list') }}">Back</a>
-        <button class="uk-button uk-button-primary" type="submit">Save</button>
+        <button class="uk-button uk-button-primary" type="submit">Save Content</button>
       </div>
     </form>
   </div>
 {% endblock %}
-

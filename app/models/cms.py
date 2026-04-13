@@ -24,6 +24,7 @@ class Page(db.Model):
     menu_id = db.Column(db.Integer, db.ForeignKey("menus.id"), nullable=True)
     meta_description = db.Column(db.Text, nullable=True)
     meta_keywords = db.Column(db.String(500), nullable=True)
+    views = db.Column(db.Integer, nullable=False, default=0)
 
 
 class Category(db.Model):
@@ -48,4 +49,5 @@ class Post(db.Model):
     updated_at = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
     meta_description = db.Column(db.Text, nullable=True)
     meta_keywords = db.Column(db.String(500), nullable=True)
+    views = db.Column(db.Integer, nullable=False, default=0)
 

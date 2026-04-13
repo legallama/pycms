@@ -35,4 +35,19 @@ class Order(db.Model):
     payment_gateway: Mapped[Optional[str]] = mapped_column(db.String(50)) # stripe, paypal, paddle
     gateway_order_id: Mapped[Optional[str]] = mapped_column(db.String(255))
     items_json: Mapped[Optional[str]] = mapped_column(db.Text, default="[]")
+    discount_code: Mapped[Optional[str]] = mapped_column(db.String(50))
+    discount_amount: Mapped[float] = mapped_column(db.Float, default=0.0)
+    created_at: Mapped[datetime] = mapped_column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+class DiscountCode(db.Model):
+    __tablename__ = "shop_discounts"
+    
+    id: Mapped[int] = mapped_column(primary_key=True)
+    code: Mapped[str] = mapped_column(db.String(50), unique=True, nullable=False)
+    type: Mapped[str] = mapped_column(db.String(20), default="percent") # percent or fixed
+    value: Mapped[float] = mapped_column(db.Float, nullable=False)
+    min_purchase: Mapped[float] = mapped_column(db.Float, default=0.0)
+    is_active: Mapped[bool] = mapped_column(db.Boolean, default=True)
+    expires_at: Mapped[Optional[datetime]] = mapped_column(db.DateTime(timezone=True), nullable=True)
+    usage_count: Mapped[int] = mapped_column(db.Integer, default=0)
     created_at: Mapped[datetime] = mapped_column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))

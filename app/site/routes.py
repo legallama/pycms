@@ -12,6 +12,9 @@ from ..models.user import UserRole
 from ..templating import get_theme, get_positions, get_layouts, list_themes
 
 from ..models.site_settings import SiteSettings
+from ..models.shop import Product
+from flask import Response
+import math
 site_bp = Blueprint("site", __name__, template_folder="../templates")
 
 
@@ -44,6 +47,7 @@ def site_settings():
         settings.meta_description = request.form.get("meta_description")
         settings.meta_keywords = request.form.get("meta_keywords")
         settings.google_analytics_id = request.form.get("google_analytics_id")
+        settings.gemini_api_key = request.form.get("gemini_api_key")
         
         settings.config_json = json.dumps(shop_config)
         db.session.commit()
@@ -400,3 +404,130 @@ def themes_delete():
         flash("Theme directory not found.", "warning")
 
     return redirect(url_for("site.themes_list"))
+
+# --- PUBLIC TOOLS: SEARCH & SITEMAP ---
+
+@site_bp.route("/search")
+def search():
+    q = request.args.get("q", "").strip()
+    results = []
+    if q:
+        # Search Pages
+        pages = db.session.execute(db.select(Page).where(Page.status == "published", Page.title.ilike(f"%{q}%"))).scalars().all()
+        for p in pages:
+            results.append({"title": p.title, "url": f"/{p.slug}", "type": "Page", "snippet": p.meta_description})
+        
+        # Search Posts
+        posts = db.session.execute(db.select(Post).where(Post.status == "published", Post.title.ilike(f"%{q}%"))).scalars().all()
+        for p in posts:
+            results.append({"title": p.title, "url": f"/blog/{p.slug}", "type": "Post", "snippet": p.meta_description})
+            
+        # Search Products
+        products = db.session.execute(db.select(Product).where(Product.is_active == True, Product.name.ilike(f"%{q}%"))).scalars().all()
+        for p in products:
+            results.append({"title": p.name, "url": f"/shop/product/{p.slug}", "type": "Product", "snippet": p.meta_description})
+
+    # Render using theme logic
+    from ..shop.routes import _render_shop_theme
+    return _render_shop_theme("search.html", results=results, query=q)
+
+@site_bp.route("/sitemap.xml")
+def sitemap():
+    pages = db.session.execute(db.select(Page).where(Page.status == "published")).scalars().all()
+    posts = db.session.execute(db.select(Post).where(Post.status == "published")).scalars().all()
+    products = db.session.execute(db.select(Product).where(Product.is_active == True)).scalars().all()
+    
+    base_url = request.host_url.rstrip("/")
+    
+    xml = '<?xml version="1.0" encoding="UTF-8"?>'
+    xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+    
+    # Home
+    xml += f'<url><loc>{base_url}/</loc><priority>1.0</priority></url>'
+    
+    for p in pages:
+        xml += f'<url><loc>{base_url}/{p.slug}</loc><lastmod>{p.updated_at.strftime("%Y-%m-%d")}</lastmod><priority>0.8</priority></url>'
+    for p in posts:
+        xml += f'<url><loc>{base_url}/blog/{p.slug}</loc><lastmod>{p.updated_at.strftime("%Y-%m-%d")}</lastmod><priority>0.6</priority></url>'
+    for p in products:
+        xml += f'<url><loc>{base_url}/shop/product/{p.slug}</loc><priority>0.7</priority></url>'
+        
+    xml += '</urlset>'
+    return Response(xml, mimetype='application/xml')
+
+def get_seo_warnings():
+    warnings = []
+    try:
+        pages = db.session.execute(db.select(Page)).scalars().all()
+        for p in pages:
+            if not p.meta_description:
+                warnings.append(f"Page '{p.title}' is missing a Meta Description.")
+            elif len(p.meta_description) < 50:
+                warnings.append(f"Page '{p.title}' has a very short Meta Description.")
+            if len(p.title) > 70:
+                warnings.append(f"Page '{p.title}' title is too long (> 70 chars).")
+                
+        posts = db.session.execute(db.select(Post)).scalars().all()
+        for p in posts:
+            if not p.meta_description:
+                warnings.append(f"Post '{p.title}' is missing a Meta Description.")
+                
+        products = db.session.execute(db.select(Product)).scalars().all()
+        for p in products:
+            if not p.meta_description:
+                warnings.append(f"Product '{p.name}' is missing a Meta Description.")
+    except Exception as e:
+        print(f"SEO Warning Error: {str(e)}")
+            
+    return warnings
+
+
+@site_bp.post("/theme/customize")
+@login_required
+@require_roles(UserRole.ADMIN)
+def theme_customize():
+    data = request.get_json() or {}
+    settings = SiteSettings.load()
+    try:
+        config = json.loads(settings.config_json or "{}")
+    except:
+        config = {}
+    
+    config["theme_customization"] = {
+        "primary_color": data.get("primary_color", "#6366f1"),
+        "secondary_color": data.get("secondary_color", "#ec4899"),
+        "bg_light": data.get("bg_light", "#ffffff"),
+        "text_light": data.get("text_light", "#333333"),
+        "bg_dark": data.get("bg_dark", "#111827"),
+        "text_dark": data.get("text_dark", "#f3f4f6"),
+        "border_radius": data.get("border_radius", "8px"),
+        "font_main": data.get("font_main", "Inter"),
+        "font_heading": data.get("font_heading", "Inter"),
+        "heading_weight": data.get("heading_weight", "700"),
+        "heading_transform": data.get("heading_transform", "none"),
+        "line_height": data.get("line_height", "1.6"),
+        "letter_spacing": data.get("letter_spacing", "normal"),
+        "link_style": data.get("link_style", "none"),
+        "bg_pattern": data.get("bg_pattern", "none"),
+        "gradient_speed": data.get("gradient_speed", "15s"),
+        "gradient_angle": data.get("gradient_angle", "-45deg"),
+        "nav_height": data.get("nav_height", "80px"),
+        "base_font_size": data.get("base_font_size", "16px"),
+        "container_width": data.get("container_width", "1200px"),
+        "card_shadow": data.get("card_shadow", "shadow"),
+        "card_border_width": data.get("card_border_width", "1px"),
+        "button_style": data.get("button_style", "standard"),
+        "nav_style": data.get("nav_style", "default"),
+        "input_style": data.get("input_style", "default"),
+        "animation_speed": data.get("animation_speed", "0.2s"),
+        "spacing_y": data.get("spacing_y", "40px"),
+        "grad_color_1_light": data.get("grad_color_1_light", "#e0e7ff"),
+        "grad_color_2_light": data.get("grad_color_2_light", "#fae8ff"),
+        "grad_color_1_dark": data.get("grad_color_1_dark", "#312e81"),
+        "grad_color_2_dark": data.get("grad_color_2_dark", "#831843"),
+        "glow_style": data.get("glow_style", "ambient")
+    }
+    
+    settings.config_json = json.dumps(config)
+    db.session.commit()
+    return {"status": "success"}

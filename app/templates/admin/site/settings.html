@@ -11,6 +11,7 @@
         <li><a href="#"><span uk-icon="cart" class="uk-margin-small-right"></span> Store</a></li>
         <li><a href="#"><span uk-icon="mail" class="uk-margin-small-right"></span> Mail</a></li>
         <li><a href="#"><span uk-icon="search" class="uk-margin-small-right"></span> SEO & Analytics</a></li>
+        <li><a href="#"><span uk-icon="bolt" class="uk-margin-small-right"></span> AI Assistant</a></li>
     </ul>
 
     <form method="post">
@@ -146,6 +147,24 @@
                             <div class="uk-form-controls">
                                 <input class="uk-input" id="google_analytics_id" name="google_analytics_id" type="text" value="{{ settings.google_analytics_id or '' }}" placeholder="G-XXXXXXXXXX">
                                 <p class="uk-text-meta">Enter your Google Analytics 4 (GA4) Measurement ID.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </li>
+
+            <!-- TAB: AI ASSISTANT -->
+            <li>
+                <div class="uk-grid-large" uk-grid>
+                    <div class="uk-width-2-3@m">
+                        <h3 class="uk-heading-divider">Google Gemini Configuration</h3>
+                        <p class="uk-text-meta">Power your content creation with AI. Get a free API key from the <a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a>.</p>
+                        
+                        <div class="uk-margin">
+                            <label class="uk-form-label" for="gemini_api_key">Gemini API Key</label>
+                            <div class="uk-form-controls">
+                                <input class="uk-input" id="gemini_api_key" name="gemini_api_key" type="password" value="{{ settings.gemini_api_key or '' }}" placeholder="Enter your Gemini API Key">
+                                <p class="uk-text-meta">This enables the 'AI Assistant' features in the content editor.</p>
                             </div>
                         </div>
                     </div>

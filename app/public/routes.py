@@ -1,4 +1,5 @@
 from flask import Blueprint, current_app, render_template, abort, request
+from jinja2.exceptions import TemplateNotFound
 
 from ..extensions import db
 from ..models.cms import Page, Post, PublishStatus
@@ -52,6 +53,8 @@ def blog_post(slug: str):
     ).scalar_one_or_none()
     if not post:
         abort(404)
+    post.views += 1
+    db.session.commit()
     return _render_theme("blog/post.html", post=post)
 
 
@@ -63,6 +66,9 @@ def page(slug: str):
     
     if not page_obj:
         abort(404)
+    
+    page_obj.views += 1
+    db.session.commit()
         
     # Determine layout template
     settings = SiteSettings.load()

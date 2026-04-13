@@ -56,6 +56,15 @@
                     {% endfor %}
                 </ul>
                 <hr>
+                <div class="uk-margin-small">
+                    <label class="uk-form-label uk-text-small">Discount Code</label>
+                    <div class="uk-grid-collapse" uk-grid>
+                        <div class="uk-width-expand">
+                            <input class="uk-input uk-form-small" type="text" name="discount_code" placeholder="ENTER CODE">
+                        </div>
+                    </div>
+                </div>
+                <hr>
                 <div class="uk-flex uk-flex-between uk-text-large uk-text-bold">
                     <span>Total</span>
                     <span>${{ "%.2f"|format(total) }}</span>
