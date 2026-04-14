@@ -443,3 +443,32 @@ def modules_delete(module_id: int):
     db.session.commit()
     flash("Module deleted.", "success")
     return redirect(url_for("modules.modules_list"))
+
+
+@modules_bp.get("/modules/<int:module_id>/preview")
+@login_required
+@require_roles(UserRole.ADMIN, UserRole.EDITOR)
+def modules_preview_fragment(module_id: int):
+    """Return ONLY the rendered HTML of a module for visual editor live updates."""
+    from ..templating import _render_module
+    m = db.session.get(Module, module_id)
+    if not m:
+        return "Not found", 404
+        
+    try:
+        config = json.loads(m.config_json or "{}")
+    except json.JSONDecodeError:
+        config = {}
+        
+    html = _render_module(m, config)
+    
+    # Wrap in standard classes for consistent preview
+    show_title = config.get("show_title", True)
+    css_class = m.css_class or ""
+    
+    out = f'<div class="module-block {css_class}">'
+    if show_title and m.title:
+        out += f'<h4 class="module-title">{m.title}</h4>'
+    out += f'<div class="module-content">{html}</div></div>'
+    
+    return out

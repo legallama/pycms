@@ -168,10 +168,65 @@
         </div>
       </div>
 
-      <div class="uk-margin uk-flex uk-flex-between">
-        <a class="uk-button uk-button-default" href="{{ url_for('cms.posts_list') }}">Back</a>
-        <button class="uk-button uk-button-primary" type="submit">Save Post</button>
+      <div class="uk-margin">
+        <div class="uk-card uk-card-default uk-card-body uk-card-small uk-background-muted">
+            <h4 class="uk-text-bold uk-margin-small-bottom">Version Control</h4>
+            <label class="uk-form-label">Revision Note</label>
+            <input class="uk-input" name="revision_note" placeholder="Summarize your changes...">
+        </div>
+      </div>
+
+      <div class="uk-margin uk-flex uk-flex-between uk-flex-middle">
+        <div class="uk-flex uk-flex-middle gap-3">
+            <a class="uk-button uk-button-default" href="{{ url_for('cms.posts_list') }}">Back</a>
+            {% if post and preview_token %}
+            <button type="button" class="uk-button uk-button-secondary" onclick="copyPreviewLink()">
+                <span uk-icon="link"></span> Copy Reviewer Link
+            </button>
+            <script>
+                function copyPreviewLink() {
+                    const url = "{{ url_for('public.preview', token=preview_token, _external=True) }}";
+                    navigator.clipboard.writeText(url);
+                    UIkit.notification({message: 'Link copied! (Valid for 24h)', status: 'primary'});
+                }
+            </script>
+            {% endif %}
+        </div>
+        <button class="uk-button uk-button-primary" type="submit">Save Content</button>
       </div>
     </form>
+
+    {% if revisions %}
+    <div class="uk-margin-large-top">
+        <div class="uk-card uk-card-default uk-card-body uk-card-small">
+            <h4 class="uk-text-bold"><span uk-icon="history"></span> Revision History (Time Travel)</h4>
+            <div style="max-height: 300px; overflow-y: auto;">
+                <table class="uk-table uk-table-divider uk-table-small uk-text-small">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Note</th>
+                            <th class="uk-text-right">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for rev in revisions %}
+                        <tr>
+                            <td class="uk-text-nowrap">{{ rev.created_at.strftime('%b %d, %H:%M') }}</td>
+                            <td><span class="uk-text-muted">{{ rev.note or '-' }}</span></td>
+                            <td class="uk-text-right">
+                                <form action="{{ url_for('cms.revision_restore', rev_id=rev.id) }}" method="post" onsubmit="return confirm('Restore this version?')">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="uk-button uk-button-text uk-text-primary">Restore</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
   </div>
 {% endblock %}

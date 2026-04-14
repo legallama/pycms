@@ -893,6 +893,7 @@ def render_position(position_name: str, default_html: str = "") -> str:
     from sqlalchemy.orm import joinedload
     from flask import current_app
     is_preview = request.args.get("preview") == "1"
+    is_editing = request.args.get("editing") == "1"
     
     # Fetch all enabled candidate modules for this position
     candidates = db.session.execute(
@@ -923,7 +924,12 @@ def render_position(position_name: str, default_html: str = "") -> str:
                 modules.append(mod)
 
     parts = []
-    for mod in modules:
+    
+    # Add an initial insert point
+    if is_editing:
+        parts.append(Markup(f'<div class="cms-insert-point" data-position="{position_name}" data-index="0"><button class="uk-button uk-button-primary uk-button-xsmall uk-border-pill cms-add-btn" onclick="parent.openLibrary(\'{position_name}\', 0)"><span uk-icon="icon: plus; ratio: 0.7"></span> Add Block</button></div>'))
+
+    for idx, mod in enumerate(modules):
         try:
             config = json.loads(mod.config_json or "{}")
         except json.JSONDecodeError:
@@ -936,14 +942,36 @@ def render_position(position_name: str, default_html: str = "") -> str:
         show_title = config.get("show_title", True)
         css_class = mod.css_class or ""
 
-        block = Markup(f'<div class="module-block {css_class}">')
-        if show_title and mod.title:
-            block += Markup(f'<h4 class="module-title">{mod.title}</h4>')
-        block += Markup(f'<div class="module-content">') + html + Markup('</div></div>')
+        # In editing mode, we add a specific wrapper with metadata
+        if is_editing:
+            block = Markup(f'<div class="cms-block-wrapper" data-block-id="{mod.id}" data-block-type="{mod.type}" data-block-title="{mod.title}">')
+            block += Markup(f'<div class="cms-block-actions">')
+            block += Markup(f'<span class="cms-block-label">{mod.title or mod.type.capitalize()}</span>')
+            block += Markup(f'<div class="cms-block-btns">')
+            block += Markup(f'<button type="button" class="cms-edit-btn" onclick="parent.openBlockEditor({mod.id})"><span uk-icon="icon: settings; ratio: 0.7"></span></button>')
+            block += Markup(f'</div></div>')
+            
+            block += Markup(f'<div class="module-block {css_class}">')
+            if show_title and mod.title:
+                block += Markup(f'<h4 class="module-title">{mod.title}</h4>')
+            block += Markup(f'<div class="module-content">') + html + Markup('</div></div></div>')
+            
+            # Add an insert point after each block
+            block += Markup(f'<div class="cms-insert-point" data-position="{position_name}" data-index="{idx + 1}"><button class="uk-button uk-button-primary uk-button-xsmall uk-border-pill cms-add-btn" onclick="parent.openLibrary(\'{position_name}\', {idx + 1})"><span uk-icon="icon: plus; ratio: 0.7"></span> Add Block</button></div>')
+        else:
+            block = Markup(f'<div class="module-block {css_class}">')
+            if show_title and mod.title:
+                block += Markup(f'<h4 class="module-title">{mod.title}</h4>')
+            block += Markup(f'<div class="module-content">') + html + Markup('</div></div>')
+            
         parts.append(block)
 
     output = Markup("").join(parts)
     
+    # In editing mode, we wrap the entire position to make it a drop target
+    if is_editing:
+        return Markup(f'<div class="cms-position-container" data-position="{position_name}">') + output + Markup('</div>')
+
     # In preview mode, always wrap the position even if empty
     if is_preview:
         label_html = f'<div class="tm-position-preview-label">{position_name}</div>'

@@ -47,20 +47,22 @@ def _uploads_root() -> Path:
     return p
 
 
-def _ensure_dirs() -> tuple[Path, Path]:
+def _ensure_dirs() -> tuple[Path, Path, Path]:
     root = _uploads_root()
     originals = root / "originals"
     thumbs = root / "thumbs"
+    responsive = root / "responsive"
     originals.mkdir(parents=True, exist_ok=True)
     thumbs.mkdir(parents=True, exist_ok=True)
-    return originals, thumbs
+    responsive.mkdir(parents=True, exist_ok=True)
+    return originals, thumbs, responsive
 
 
 def _ext(filename: str) -> str:
     return Path(filename).suffix.lower()
 
 
-def _save_upload(fs: FileStorage) -> tuple[str, str, int, Optional[int], Optional[int]]:
+def _save_upload(fs: FileStorage) -> tuple[str, str, int, Optional[int], Optional[int], str, dict]:
     if not fs or not fs.filename:
         raise ValueError("Missing file")
     filename = secure_filename(fs.filename)
@@ -77,7 +79,7 @@ def _save_upload(fs: FileStorage) -> tuple[str, str, int, Optional[int], Optiona
     if size > MAX_UPLOAD_BYTES:
         raise ValueError("File too large")
 
-    originals, thumbs = _ensure_dirs()
+    originals, thumbs, responsive = _ensure_dirs()
     token = secrets.token_hex(12)
     
     is_image = ext in ALLOWED_IMAGE_EXTS
@@ -87,16 +89,28 @@ def _save_upload(fs: FileStorage) -> tuple[str, str, int, Optional[int], Optiona
     stored_path = originals / stored_name
 
     width = height = None
+    responsive_data = {}
+    
     if is_image and ext != ".gif":
         # Convert to WebP
         with Image.open(fs.stream) as im:
             width, height = im.size
             im.save(stored_path, "WEBP", quality=85)
             
-            # Save thumbnail as WebP too
+            # Save thumbnail
             im.thumbnail((400, 400))
-            thumb_path = thumbs / stored_name
-            im.save(thumb_path, "WEBP")
+            im.save(thumbs / stored_name, "WEBP")
+            responsive_data["thumb"] = f"thumbs/{stored_name}"
+            
+            # Save responsive sizes
+            for label, w in [("med", 800), ("lrg", 1600)]:
+                if width > w:
+                    im_copy = Image.open(fs.stream)
+                    im_copy.thumbnail((w, w))
+                    name = f"{token}_{label}.webp"
+                    im_copy.save(responsive / name, "WEBP")
+                    responsive_data[label] = f"responsive/{name}"
+                    
         mime = "image/webp"
     else:
         # Save as original
@@ -106,10 +120,10 @@ def _save_upload(fs: FileStorage) -> tuple[str, str, int, Optional[int], Optiona
             with Image.open(stored_path) as im:
                 width, height = im.size
                 im.thumbnail((400, 400))
-                thumb_path = thumbs / stored_name
-                im.save(thumb_path)
+                im.save(thumbs / stored_name)
+                responsive_data["thumb"] = f"thumbs/{stored_name}"
 
-    return stored_rel, filename, size, width, height, mime
+    return stored_rel, filename, size, width, height, mime, responsive_data
 
 
 @media_bp.get("/media")
@@ -170,15 +184,34 @@ def media_upload():
     fs = request.files.get("file")
     folder_id = request.form.get("folder_id", type=int)
     try:
-        rel_path, original_name, size, width, height, mime = _save_upload(fs)
+        rel_path, original_name, size, width, height, mime, responsive_data = _save_upload(fs)
     except ValueError as e:
         flash(str(e), "danger")
         return redirect(url_for("media.media_list", folder_id=folder_id))
 
-    mf = MediaFile(path=rel_path, filename=original_name, mime=mime, size=size, width=width, height=height, folder_id=folder_id)
+    mf = MediaFile(
+        path=rel_path, 
+        filename=original_name, 
+        mime=mime, 
+        size=size, 
+        width=width, 
+        height=height, 
+        folder_id=folder_id,
+        responsive_data=responsive_data
+    )
+    
+    # AI Auto-Captioning
+    if mime.startswith("image/"):
+        from ..utils.ai_helper import AIHelper
+        fs.stream.seek(0)
+        ai_meta = AIHelper.analyze_image(fs.stream.read(), mime)
+        if ai_meta:
+            mf.alt_text = ai_meta.get("alt")
+            mf.caption = ai_meta.get("caption")
+
     db.session.add(mf)
     db.session.commit()
-    flash("Uploaded.", "success")
+    flash("Uploaded and optimized.", "success")
     return redirect(url_for("media.media_list", folder_id=folder_id))
 
 
@@ -203,6 +236,24 @@ def media_delete(file_id: int):
     db.session.commit()
     flash("Deleted.", "success")
     return redirect(url_for("media.media_list"))
+
+
+@media_bp.post("/media/<int:file_id>/save_details")
+@login_required
+@require_roles(UserRole.ADMIN, UserRole.EDITOR)
+def media_save_details(file_id: int):
+    data = request.get_json()
+    mf = db.session.get(MediaFile, file_id)
+    if not mf:
+        return {"error": "File not found"}, 404
+        
+    mf.alt_text = data.get("alt_text", mf.alt_text)
+    mf.caption = data.get("caption", mf.caption)
+    mf.focal_point_x = data.get("focal_point_x", mf.focal_point_x)
+    mf.focal_point_y = data.get("focal_point_y", mf.focal_point_y)
+    
+    db.session.commit()
+    return {"success": True}
 
 
 @media_bp.post("/media/<int:file_id>/save_edit")

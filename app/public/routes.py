@@ -83,6 +83,38 @@ def page(slug: str):
     except TemplateNotFound:
         return _render_theme(layout_cfg["template"], page=page_obj, layout_template=layout_template)
 
+
+@public_bp.get("/preview/<token>")
+def preview(token: str):
+    from ..utils.audit import PreviewHelper
+    data = PreviewHelper.verify_token(token)
+    if not data:
+        abort(403, description="Preview link expired or invalid.")
+    
+    target_type = data.get("type")
+    target_id = data.get("id")
+    
+    if target_type == "page":
+        obj = db.session.get(Page, target_id)
+        if not obj: abort(404)
+        
+        settings = SiteSettings.load()
+        layouts = get_layouts()
+        layout_cfg = layouts.get(obj.layout, layouts.get("default"))
+        layout_template = f"{settings.active_theme}/templates/{layout_cfg['template']}"
+        
+        try:
+            return _render_theme("page.html", page=obj, layout_template=layout_template, is_preview=True)
+        except TemplateNotFound:
+            return _render_theme(layout_cfg["template"], page=obj, layout_template=layout_template, is_preview=True)
+            
+    elif target_type == "post":
+        obj = db.session.get(Post, target_id)
+        if not obj: abort(404)
+        return _render_theme("blog/post.html", post=obj, is_preview=True)
+    
+    abort(404)
+
 @public_bp.errorhandler(404)
 def not_found(e):
     return _render_theme("404.html"), 404

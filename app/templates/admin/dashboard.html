@@ -81,6 +81,26 @@
           {% endif %}
         </ul>
       </div>
+
+      <div class="uk-card uk-card-default uk-card-body uk-border-rounded uk-margin-top">
+        <h3 class="uk-card-title uk-text-bold uk-margin-small-bottom">Activity Stream</h3>
+        <ul class="uk-list uk-list-small uk-text-small">
+          {% for log in activity %}
+          <li>
+            <div class="uk-flex uk-flex-top gap-3">
+              <div class="uk-text-primary" style="margin-top: 4px;"><span uk-icon="icon: history; ratio: 0.8"></span></div>
+              <div>
+                <div class="uk-text-bold">{{ log.action }}</div>
+                <div class="uk-text-meta" style="font-size: 0.7rem;">{{ log.created_at.strftime('%H:%M · %b %d') }}</div>
+              </div>
+            </div>
+          </li>
+          {% endfor %}
+          {% if not activity %}
+          <li class="uk-text-muted uk-text-center">No recent activity.</li>
+          {% endif %}
+        </ul>
+      </div>
     </div>
   </div>
 

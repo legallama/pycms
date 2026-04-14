@@ -6,11 +6,6 @@
 {% block head %}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" />
 <style>
-/* ═══════════════════════════════════════
-   Media Manager Styles
-   ═══════════════════════════════════════ */
-
-/* ─── Upload Zone ─── */
 .media-upload-zone {
     border: 2px dashed var(--border-default);
     border-radius: 16px;
@@ -23,13 +18,10 @@
     overflow: hidden;
     margin-bottom: 24px;
 }
-
-.media-upload-zone:hover,
-.media-upload-zone.drag-over {
+.media-upload-zone:hover, .media-upload-zone.drag-over {
     border-color: var(--primary);
     background: var(--primary-glow);
 }
-
 .media-upload-zone .upload-icon {
     width: 48px;
     height: 48px;
@@ -41,21 +33,15 @@
     justify-content: center;
     margin-bottom: 12px;
 }
+.media-upload-zone input[type="file"] { display: none; }
 
-.media-upload-zone input[type="file"] {
-    display: none;
-}
-
-/* ─── Toolbar & Breadcrumbs ─── */
 .media-toolbar {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    flex-wrap: wrap;
     margin-bottom: 16px;
 }
-
 .breadcrumbs {
     display: flex;
     align-items: center;
@@ -63,29 +49,16 @@
     margin-bottom: 16px;
     font-size: 0.9rem;
 }
+.breadcrumb-item { color: var(--text-muted); text-decoration: none; transition: color 0.2s; }
+.breadcrumb-item:hover { color: var(--primary); }
+.breadcrumb-separator { color: var(--border-default); }
 
-.breadcrumb-item {
-    color: var(--text-muted);
-    text-decoration: none;
-    transition: color 0.2s;
-}
-
-.breadcrumb-item:hover {
-    color: var(--primary);
-}
-
-.breadcrumb-separator {
-    color: var(--border-default);
-}
-
-/* ─── Folders Grid ─── */
 .folder-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     gap: 12px;
     margin-bottom: 24px;
 }
-
 .folder-item {
     background: var(--bg-card);
     border: 1px solid var(--border-default);
@@ -97,26 +70,15 @@
     text-decoration: none;
     color: var(--text-heading);
     transition: all 0.2s;
-    cursor: pointer;
 }
+.folder-item:hover { border-color: var(--primary); background: var(--bg-card-hover); transform: translateY(-2px); }
+.folder-icon { color: #f59e0b; }
 
-.folder-item:hover {
-    border-color: var(--primary);
-    background: var(--bg-card-hover);
-    transform: translateY(-2px);
-}
-
-.folder-icon {
-    color: #f59e0b; /* Amber/Folder color */
-}
-
-/* ─── Media Grid ─── */
 .media-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
     gap: 16px;
 }
-
 .media-grid-item {
     background: var(--bg-card);
     border: 1px solid var(--border-default);
@@ -125,12 +87,7 @@
     position: relative;
     transition: all 0.25s;
 }
-
-.media-grid-item:hover {
-    border-color: var(--primary);
-    transform: translateY(-2px);
-}
-
+.media-grid-item:hover { border-color: var(--primary); transform: translateY(-2px); }
 .media-thumb {
     aspect-ratio: 1;
     overflow: hidden;
@@ -140,13 +97,7 @@
     justify-content: center;
     position: relative;
 }
-
-.media-thumb img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
+.media-thumb img { width: 100%; height: 100%; object-fit: cover; }
 .media-overlay {
     position: absolute;
     inset: 0;
@@ -158,11 +109,7 @@
     opacity: 0;
     transition: opacity 0.2s;
 }
-
-.media-grid-item:hover .media-overlay {
-    opacity: 1;
-}
-
+.media-grid-item:hover .media-overlay { opacity: 1; }
 .overlay-btn {
     width: 32px;
     height: 32px;
@@ -175,42 +122,19 @@
     justify-content: center;
     border: none;
     cursor: pointer;
-    transition: all 0.2s;
 }
+.overlay-btn:hover { background: var(--primary); }
+.media-info { padding: 10px; }
+.file-name { font-size: 0.75rem; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; overflow: hidden; }
+.file-meta { font-size: 0.65rem; color: var(--text-muted); }
 
-.overlay-btn:hover {
-    background: var(--primary);
-}
-
-.media-info {
-    padding: 10px;
-}
-
-.file-name {
-    font-size: 0.75rem;
-    font-weight: 600;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.file-meta {
-    font-size: 0.65rem;
-    color: var(--text-muted);
-}
-
-/* ─── Cropper Styles ─── */
-.cropper-container-wrapper {
-    max-height: 500px;
-    background: #000;
-}
+.focal-picker-container { position: relative; border-radius: 8px; overflow: hidden; background: #000; }
+.cropper-container-wrapper { max-height: 500px; background: #000; }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="uk-container uk-container-large">
-    
-    <!-- Breadcrumbs -->
     <div class="breadcrumbs">
         <a href="{{ url_for('media.media_list', mode=mode) }}" class="breadcrumb-item">Library</a>
         {% for b in breadcrumbs %}
@@ -219,7 +143,6 @@
         {% endfor %}
     </div>
 
-    <!-- Upload Zone -->
     <div class="media-upload-zone" id="upload-zone">
         <form id="upload-form" method="post" action="{{ url_for('media.media_upload') }}" enctype="multipart/form-data">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
@@ -229,29 +152,22 @@
         <div class="upload-icon" uk-icon="icon: cloud-upload; ratio: 1.5"></div>
         <div>
             <p class="uk-text-bold uk-margin-remove">Drop files or click to upload</p>
-            <p class="uk-text-meta uk-margin-remove">Auto-converted to WebP · Max 100MB</p>
+            <p class="uk-text-meta uk-margin-remove">Auto-converted to WebP · AI Captioning · Max 100MB</p>
         </div>
     </div>
 
-    <!-- Toolbar -->
     <div class="media-toolbar">
         <div class="uk-flex uk-flex-middle gap-3">
             <button class="uk-button uk-button-default uk-button-small" uk-toggle="target: #modal-new-folder">
                 <span uk-icon="icon: plus; ratio: 0.8"></span> New Folder
             </button>
-            <div class="media-count uk-text-meta">
-                {{ folders|length }} folders, {{ files|length }} files
-            </div>
         </div>
-        <div>
-            <div class="uk-inline">
-                <span class="uk-form-icon" uk-icon="icon: search; ratio: 0.8"></span>
-                <input class="uk-input uk-form-small uk-form-width-medium" type="text" placeholder="Search...">
-            </div>
+        <div class="uk-inline">
+            <span class="uk-form-icon" uk-icon="icon: search; ratio: 0.8"></span>
+            <input class="uk-input uk-form-small uk-form-width-medium" type="text" placeholder="Search...">
         </div>
     </div>
 
-    <!-- Folders -->
     {% if folders %}
     <div class="folder-grid">
         {% for f in folders %}
@@ -263,110 +179,84 @@
     </div>
     {% endif %}
 
-    <!-- Files -->
     <div class="media-grid">
         {% for f in files %}
-        <div class="media-grid-item" data-id="{{ f.id }}" data-name="{{ f.filename }}">
+        <div class="media-grid-item" 
+             data-id="{{ f.id }}" 
+             data-name="{{ f.filename }}" 
+             data-alt="{{ f.alt_text or '' }}"
+             data-caption="{{ f.caption or '' }}"
+             data-fx="{{ f.focal_point_x }}"
+             data-fy="{{ f.focal_point_y }}">
             <div class="media-thumb">
                 {% if f.mime.startswith('image/') %}
                 <img src="{{ url_for('media.uploads_serve', relpath='thumbs/' ~ f.path.split('/')[-1]) }}" loading="lazy">
-                {% elif f.mime.startswith('video/') %}
-                <span uk-icon="icon: play-circle; ratio: 2"></span>
                 {% else %}
-                <span uk-icon="icon: file-pdf; ratio: 2"></span>
+                <span uk-icon="icon: file-text; ratio: 2"></span>
                 {% endif %}
 
                 <div class="media-overlay">
                     {% if mode == 'select' %}
-                    <button class="overlay-btn" onclick="selectImage('{{ url_for('media.uploads_serve', relpath=f.path, _external=True) }}')">
-                        <span uk-icon="check"></span>
-                    </button>
+                    <button class="overlay-btn" onclick="selectImage('{{ url_for('media.uploads_serve', relpath=f.path, _external=True) }}')"><span uk-icon="check"></span></button>
                     {% endif %}
-                    
-                    <button class="overlay-btn" title="Edit/Crop" onclick="openEditor('{{ url_for('media.uploads_serve', relpath=f.path) }}', {{ f.id }})">
-                        <span uk-icon="pencil"></span>
-                    </button>
-                    
-                    <button class="overlay-btn" uk-toggle="target: #modal-move-{{ f.id }}">
-                        <span uk-icon="move"></span>
-                    </button>
-
-                    <form action="{{ url_for('media.media_delete', file_id=f.id) }}" method="post" style="margin:0" onsubmit="return confirm('Delete?')">
+                    <button class="overlay-btn" title="AI & Focal Point" onclick="openDetails(this)"><span uk-icon="settings"></span></button>
+                    <button class="overlay-btn" title="Edit/Crop" onclick="openEditor('{{ url_for('media.uploads_serve', relpath=f.path) }}', {{ f.id }})"><span uk-icon="image"></span></button>
+                    <form action="{{ url_for('media.media_delete', file_id=f.id) }}" method="post" onsubmit="return confirm('Delete?')">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                         <button type="submit" class="overlay-btn danger"><span uk-icon="trash"></span></button>
                     </form>
                 </div>
             </div>
             <div class="media-info">
-                <div class="file-name" title="{{ f.filename }}">{{ f.filename }}</div>
+                <div class="file-name">{{ f.filename }}</div>
                 <div class="file-meta">{{ format_size(f.size) }} {% if f.width %}· {{ f.width }}x{{ f.height }}{% endif %}</div>
-            </div>
-        </div>
-
-        <!-- Move Modal -->
-        <div id="modal-move-{{ f.id }}" uk-modal>
-            <div class="uk-modal-dialog uk-modal-body">
-                <h2 class="uk-modal-title">Move File</h2>
-                <form action="{{ url_for('media.media_file_move', file_id=f.id) }}" method="post">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                    <div class="uk-margin">
-                        <label class="uk-form-label">Select Destination</label>
-                        <select class="uk-select" name="folder_id">
-                            <option value="">(Library Root)</option>
-                            {% for fold in folders_all or folders %}
-                            <option value="{{ fold.id }}">{{ fold.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <p class="uk-text-right">
-                        <button class="uk-button uk-button-default uk-modal-close" type="button">Cancel</button>
-                        <button class="uk-button uk-button-primary" type="submit">Move</button>
-                    </p>
-                </form>
             </div>
         </div>
         {% endfor %}
     </div>
-
-    {% if not files and not folders %}
-    <div class="uk-text-center uk-padding-large">
-        <span uk-icon="icon: cloud-upload; ratio: 3" class="uk-text-muted"></span>
-        <p class="uk-text-muted">This folder is empty</p>
-    </div>
-    {% endif %}
 </div>
 
-<!-- New Folder Modal -->
-<div id="modal-new-folder" uk-modal>
-    <div class="uk-modal-dialog uk-modal-body">
-        <h2 class="uk-modal-title">New Folder</h2>
-        <form action="{{ url_for('media.media_folder_new') }}" method="post">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-            <input type="hidden" name="parent_id" value="{{ current_folder.id if current_folder else '' }}" />
-            <div class="uk-margin">
-                <input class="uk-input" type="text" name="name" placeholder="Folder Name" required autofocus>
+<!-- Details Modal -->
+<div id="modal-media-details" class="uk-modal-container" uk-modal>
+    <div class="uk-modal-dialog">
+        <button class="uk-modal-close-default" type="button" uk-close></button>
+        <div class="uk-modal-header"><h2 class="uk-modal-title">Optimization & AI</h2></div>
+        <div class="uk-modal-body" uk-grid>
+            <div class="uk-width-2-3@m">
+                <div class="focal-picker-container">
+                    <img id="details-image" style="width: 100%;">
+                    <div id="focal-marker" style="position: absolute; width: 24px; height: 24px; border: 3px solid white; border-radius: 50%; background: var(--primary); transform: translate(-50%, -50%); pointer-events: none;"></div>
+                </div>
             </div>
-            <p class="uk-text-right">
-                <button class="uk-button uk-button-default uk-modal-close" type="button">Cancel</button>
-                <button class="uk-button uk-button-primary" type="submit">Create</button>
-            </p>
-        </form>
+            <div class="uk-width-1-3@m">
+                <div class="uk-margin">
+                    <label class="uk-form-label">Alt Text</label>
+                    <input class="uk-input" id="det-alt">
+                </div>
+                <div class="uk-margin">
+                    <label class="uk-form-label">Caption</label>
+                    <textarea class="uk-textarea" id="det-caption" rows="4"></textarea>
+                </div>
+            </div>
+        </div>
+        <div class="uk-modal-footer uk-text-right">
+            <button class="uk-button uk-button-default uk-modal-close" type="button">Cancel</button>
+            <button class="uk-button uk-button-primary" type="button" onclick="saveDetails()">Save</button>
+        </div>
     </div>
 </div>
 
-<!-- Image Editor Modal -->
+<!-- Editor Modal -->
 <div id="modal-image-editor" class="uk-modal-full" uk-modal>
     <div class="uk-modal-dialog uk-height-viewport uk-flex uk-flex-column">
         <div class="uk-modal-header uk-padding-small uk-background-secondary uk-light uk-flex uk-flex-between uk-flex-middle">
             <h2 class="uk-modal-title uk-margin-remove">Edit Image</h2>
             <div>
-                <button class="uk-button uk-button-default uk-button-small" onclick="rotateLeft()"><span uk-icon="refresh"></span> Rotate Left</button>
-                <button class="uk-button uk-button-default uk-button-small" onclick="rotateRight()"><span uk-icon="refresh"></span> Rotate Right</button>
                 <button class="uk-button uk-button-primary uk-button-small" onclick="saveCrop()">Save Changes</button>
                 <button class="uk-modal-close-full uk-icon-button" type="button" uk-close></button>
             </div>
         </div>
-        <div class="uk-modal-body uk-flex-1 uk-padding-remove uk-background-muted uk-flex uk-flex-center uk-flex-middle" style="overflow:hidden;">
+        <div class="uk-modal-body uk-flex-1 uk-padding-remove uk-background-muted uk-flex uk-flex-center uk-flex-middle">
             <div class="cropper-container-wrapper uk-width-1-1 uk-height-1-1">
                 <img id="editor-image" style="max-width: 100%;">
             </div>
@@ -376,83 +266,86 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
 <script>
-let cropper = null;
 let currentFileId = null;
+let currentFX = 50;
+let currentFY = 50;
+let cropper = null;
+const marker = document.getElementById('focal-marker');
+
+function openDetails(btn) {
+    const item = btn.closest('.media-grid-item');
+    currentFileId = item.dataset.id;
+    currentFX = item.dataset.fx || 50;
+    currentFY = item.dataset.fy || 50;
+    
+    // Logic for original path
+    const thumbSrc = item.querySelector('img').src;
+    document.getElementById('details-image').src = thumbSrc.replace('thumbs/', 'originals/');
+    
+    document.getElementById('det-alt').value = item.dataset.alt;
+    document.getElementById('det-caption').value = item.dataset.caption;
+    updateMarker();
+    UIkit.modal('#modal-media-details').show();
+}
+
+document.querySelector('.focal-picker-container').onclick = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    currentFX = Math.round(((e.clientX - rect.left) / rect.width) * 100);
+    currentFY = Math.round(((e.clientY - rect.top) / rect.height) * 100);
+    updateMarker();
+};
+
+function updateMarker() {
+    marker.style.left = currentFX + '%';
+    marker.style.top = currentFY + '%';
+}
+
+function saveDetails() {
+    fetch(`/media/${currentFileId}/save_details`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
+        body: JSON.stringify({
+            alt_text: document.getElementById('det-alt').value,
+            caption: document.getElementById('det-caption').value,
+            focal_point_x: currentFX,
+            focal_point_y: currentFY
+        })
+    }).then(() => {
+        UIkit.modal('#modal-media-details').hide();
+        window.location.reload();
+    });
+}
 
 function openEditor(url, id) {
     currentFileId = id;
     const img = document.getElementById('editor-image');
     img.src = url;
-    
     UIkit.modal('#modal-image-editor').show();
-    
-    if (cropper) {
-        cropper.destroy();
-    }
-    
+    if (cropper) cropper.destroy();
     setTimeout(() => {
-        cropper = new Cropper(img, {
-            viewMode: 1,
-            dragMode: 'move',
-            autoCropArea: 0.8,
-            restore: false,
-            guides: true,
-            center: true,
-            highlight: false,
-            cropBoxMovable: true,
-            cropBoxResizable: true,
-            toggleDragModeOnDblclick: false,
-        });
+        cropper = new Cropper(img, { viewMode: 1, autoCropArea: 0.8 });
     }, 200);
 }
 
-function rotateLeft() { cropper.rotate(-90); }
-function rotateRight() { cropper.rotate(90); }
-
 function saveCrop() {
-    const canvas = cropper.getCroppedCanvas();
-    const dataUrl = canvas.toDataURL('image/webp');
-    
+    const dataUrl = cropper.getCroppedCanvas().toDataURL('image/webp');
     fetch(`/media/${currentFileId}/save_edit`, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': '{{ csrf_token() }}'
-        },
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
         body: JSON.stringify({ image: dataUrl })
-    }).then(res => {
-        if (res.ok) {
-            UIkit.modal('#modal-image-editor').hide();
-            window.location.reload();
-        } else {
-            alert('Failed to save changes');
-        }
-    });
+    }).then(() => window.location.reload());
 }
 
-// ─── Dropzone ───
 const zone = document.getElementById('upload-zone');
 const fileInput = document.getElementById('file-input');
 const form = document.getElementById('upload-form');
-
 zone.onclick = () => fileInput.click();
 fileInput.onchange = () => form.submit();
-
 zone.ondragover = (e) => { e.preventDefault(); zone.classList.add('drag-over'); };
 zone.ondragleave = () => zone.classList.remove('drag-over');
 zone.ondrop = (e) => {
     e.preventDefault();
-    if (e.dataTransfer.files.length) {
-        fileInput.files = e.dataTransfer.files;
-        form.submit();
-    }
+    if (e.dataTransfer.files.length) { fileInput.files = e.dataTransfer.files; form.submit(); }
 };
-
-function selectImage(url) {
-    if (window.opener) {
-        window.opener.postMessage({ url: url }, "*");
-        window.close();
-    }
-}
 </script>
 {% endblock %}

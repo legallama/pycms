@@ -1,0 +1,390 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Visual Builder: {{ page.title }}{% endblock %}
+
+{% block head %}
+<style>
+    body, html { overflow: hidden; height: 100%; background: #0f172a; }
+    #admin-main-nav, .admin-navbar { display: none !important; } /* Hide global admin nav */
+    
+    .builder-root {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        color: #f1f5f9;
+        font-family: 'Inter', sans-serif;
+    }
+
+    /* Header */
+    .builder-header {
+        height: 60px;
+        background: #1e293b;
+        border-bottom: 1px solid #334155;
+        display: flex;
+        align-items: center;
+        padding: 0 20px;
+        justify-content: space-between;
+        z-index: 100;
+    }
+
+    /* Main Layout */
+    .builder-main {
+        display: flex;
+        flex-grow: 1;
+        overflow: hidden;
+    }
+
+    /* Side Panel */
+    .builder-sidebar {
+        width: 340px;
+        background: #fff;
+        color: #1e293b;
+        display: flex;
+        flex-direction: column;
+        border-right: 1px solid #e2e8f0;
+        z-index: 90;
+        box-shadow: 4px 0 24px rgba(0,0,0,0.05);
+    }
+    .sidebar-tabs {
+        display: flex;
+        background: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .sidebar-tab-btn {
+        flex: 1;
+        padding: 15px;
+        text-align: center;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #64748b;
+        border-bottom: 2px solid transparent;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .sidebar-tab-btn.active {
+        color: #1e87f0;
+        border-bottom-color: #1e87f0;
+        background: #fff;
+    }
+
+    .sidebar-scroll {
+        flex-grow: 1;
+        overflow-y: auto;
+        padding: 0; /* Remove padding for full-flush iframes */
+    }
+
+    #sidebar-library {
+        padding: 20px;
+    }
+
+    /* Library Items */
+    .lib-item {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .lib-item:hover {
+        border-color: #1e87f0;
+        background: #eff6ff;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(30, 135, 240, 0.1);
+    }
+    .lib-icon {
+        width: 32px;
+        height: 32px;
+        background: #fff;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #1e87f0;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    /* Canvas Area */
+    .builder-canvas {
+        flex-grow: 1;
+        background: #0f172a;
+        padding: 40px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        overflow-y: auto;
+        position: relative;
+    }
+    .canvas-frame-container {
+        width: 100%;
+        max-width: 100%;
+        height: 100%;
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        background: #fff;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 30px 60px rgba(0,0,0,0.5);
+    }
+    .preview-iframe {
+        width: 100%;
+        height: 100%;
+        border: none;
+    }
+
+    /* Loading */
+    .canvas-loader {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        background: #1e87f0;
+        color: #fff;
+        padding: 8px 16px;
+        border-radius: 50px;
+        font-size: 12px;
+        font-weight: 600;
+        display: none;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    .is-syncing .canvas-loader { display: block; }
+
+    /* Property Form */
+    .prop-form-iframe {
+        width: 100%;
+        height: 100%;
+        min-height: calc(100vh - 120px);
+        border: none;
+    }
+
+    .device-switcher {
+        display: flex;
+        background: #334155;
+        padding: 4px;
+        border-radius: 8px;
+    }
+    .device-btn {
+        background: transparent;
+        border: none;
+        color: #94a3b8;
+        padding: 6px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+    .device-btn.active {
+        background: #1e87f0;
+        color: #fff;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="builder-root">
+    <div class="builder-header">
+        <div class="uk-flex uk-flex-middle">
+            <a href="{{ url_for('admin.visual_editor_list') }}" class="uk-link-reset uk-margin-right">
+                <span uk-icon="icon: arrow-left; ratio: 1.2" style="color: #94a3b8"></span>
+            </a>
+            <div>
+                <div style="font-size: 13px; font-weight: 700;">{{ page.title }}</div>
+                <div style="font-size: 11px; color: #94a3b8">Visual Page Builder</div>
+            </div>
+        </div>
+
+        <div class="device-switcher">
+            <button class="device-btn active" onclick="setDevice('desktop', this)"><span uk-icon="laptop"></span></button>
+            <button class="device-btn" onclick="setDevice('tablet', this)"><span uk-icon="tablet"></span></button>
+            <button class="device-btn" onclick="setDevice('mobile', this)"><span uk-icon="receiver"></span></button>
+        </div>
+
+        <div class="uk-flex uk-flex-middle">
+            <button class="uk-button uk-button-default uk-button-small uk-border-rounded uk-margin-small-right" onclick="refreshPreview()" style="color: #fff; border-color: #334155">
+                <span uk-icon="refresh"></span>
+            </button>
+            <a href="/{{ page.slug }}" target="_blank" class="uk-button uk-button-primary uk-button-small uk-border-rounded">
+                Preview Live <span uk-icon="link" class="uk-margin-small-left"></span>
+            </a>
+        </div>
+    </div>
+
+    <div class="builder-main">
+        <div class="builder-sidebar">
+            <div class="sidebar-tabs">
+                <div class="sidebar-tab-btn active" onclick="switchTab('library', this)">Library</div>
+                <div class="sidebar-tab-btn" onclick="switchTab('properties', this)" id="properties-tab-header">Properties</div>
+            </div>
+
+            <div class="sidebar-scroll" id="sidebar-library">
+                <div class="uk-text-meta uk-text-uppercase uk-margin-small-bottom" style="font-size: 10px; font-weight: 800; letter-spacing: 0.1em;">Essential Blocks</div>
+                {% for tid, tlabel in module_types %}
+                <div class="lib-item" onclick="promptAddBlock('{{ tid }}')">
+                    <div class="lib-icon">
+                        <span uk-icon="icon: {{ 'copy' if 'html' in tid else ('image' if 'hero' in tid else 'list') }}"></span>
+                    </div>
+                    <div>
+                        <div style="font-weight: 600; font-size: 13px;">{{ tlabel }}</div>
+                        <div style="font-size: 11px; color: #64748b;">Basic component</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="sidebar-scroll uk-hidden" id="sidebar-properties">
+                <div id="prop-container">
+                    <div class="uk-text-center uk-margin-large-top">
+                        <span uk-icon="icon: mouse; ratio: 2" class="uk-text-muted"></span>
+                        <p class="uk-text-muted uk-text-small">Click a block on the canvas to edit its properties.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="builder-canvas" id="canvas-wrapper">
+            <div class="canvas-loader"><span uk-spinner="ratio: 0.5"></span> Syncing...</div>
+            <div class="canvas-frame-container" id="frame-container">
+                <iframe src="/{{ page.slug }}?editing=1" id="preview-frame" class="preview-iframe"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const frame = document.getElementById('preview-frame');
+    const frameContainer = document.getElementById('frame-container');
+    const canvasWrapper = document.getElementById('canvas-wrapper');
+
+    function setDevice(device, btn) {
+        document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        if (device === 'mobile') {
+            frameContainer.style.width = '375px';
+            frameContainer.style.height = '667px';
+        } else if (device === 'tablet') {
+            frameContainer.style.width = '768px';
+            frameContainer.style.height = '1024px';
+        } else {
+            frameContainer.style.width = '100%';
+            frameContainer.style.height = '100%';
+        }
+    }
+
+    function switchTab(tab, btn) {
+        document.querySelectorAll('.sidebar-tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        document.getElementById('sidebar-library').classList.add('uk-hidden');
+        document.getElementById('sidebar-properties').classList.add('uk-hidden');
+        document.getElementById('sidebar-' + tab).classList.remove('uk-hidden');
+    }
+
+    function refreshPreview() {
+        frame.contentWindow.location.reload();
+    }
+
+    // Bridge for iframe communication
+    window.openBlockEditor = function(blockId) {
+        switchTab('properties', document.getElementById('properties-tab-header'));
+        const container = document.getElementById('prop-container');
+        container.innerHTML = '<div class="uk-text-center uk-margin-large-top"><span uk-spinner></span></div>';
+        
+        // Notify iframe to select the block visually
+        frame.contentWindow.postMessage({ type: 'SELECT_BLOCK', id: blockId }, '*');
+
+        const editUrl = "/admin/modules/" + blockId + "/edit?minimal=1";
+        container.innerHTML = `<iframe src="${editUrl}" class="prop-form-iframe" id="prop-frame"></iframe>`;
+        
+        const propFrame = document.getElementById('prop-frame');
+        propFrame.onload = function() {
+            try {
+                const doc = propFrame.contentWindow.document;
+                const form = doc.querySelector('form');
+                if (form) {
+                    form.onsubmit = async function(e) {
+                        e.preventDefault();
+                        canvasWrapper.classList.add('is-syncing');
+                        const formData = new FormData(form);
+                        
+                        const res = await fetch(form.action, { method: 'POST', body: formData });
+                        if (res.ok) {
+                            UIkit.notification({message: 'Module updated!', status: 'success', pos: 'bottom-center'});
+                            updatePreviewFragment(blockId);
+                        }
+                        canvasWrapper.classList.remove('is-syncing');
+                    };
+                }
+            } catch(e) {}
+        };
+    };
+
+    async function updatePreviewFragment(blockId) {
+        const res = await fetch(`/admin/modules/${blockId}/preview`);
+        if (res.ok) {
+            const html = await res.text();
+            const wrapper = frame.contentWindow.document.querySelector(`.cms-block-wrapper[data-block-id="${blockId}"] .module-block`);
+            if (wrapper) wrapper.outerHTML = html;
+            else refreshPreview();
+        }
+    }
+
+    window.onBlockMoved = async function(blockId, position, order) {
+        canvasWrapper.classList.add('is-syncing');
+        await fetch("{{ url_for('admin.api_reorder_block') }}", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
+            body: JSON.stringify({ block_id: blockId, position: position, order: order })
+        });
+        canvasWrapper.classList.remove('is-syncing');
+        UIkit.notification({message: 'Layout saved', status: 'primary', pos: 'bottom-center'});
+    };
+
+    let pendingInsertion = null;
+
+    function openLibrary(position, index) {
+        pendingInsertion = { position, index };
+        switchTab('library', document.querySelector('.sidebar-tab-btn[onclick*="library"]'));
+        UIkit.notification({message: `Select a block to insert into <b>${position}</b>`, status: 'primary', pos: 'bottom-center'});
+        
+        // Visual cue in library
+        document.getElementById('sidebar-library').classList.add('ready-to-insert');
+    }
+
+    async function promptAddBlock(type) {
+        if (!pendingInsertion) {
+            // Default to bottom of main/content if nothing selected? 
+            // For now just ask to click a + button
+            UIkit.notification({message: 'Please click a "+" button on the page first to choose an insertion point.', status: 'warning', pos: 'bottom-center'});
+            return;
+        }
+
+        canvasWrapper.classList.add('is-syncing');
+        try {
+            const res = await fetch("/admin/api/blocks/create", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
+                body: JSON.stringify({
+                    page_id: {{ page.id }},
+                    type: type,
+                    position: pendingInsertion.position,
+                    index: pendingInsertion.index
+                })
+            });
+            
+            if (res.ok) {
+                const data = await res.json();
+                UIkit.notification({message: 'Block added!', status: 'success', pos: 'bottom-center'});
+                pendingInsertion = null;
+                refreshPreview();
+                // Optionally open the newly created block's editor after reload?
+            }
+        } catch (e) {
+            console.error(e);
+        }
+        canvasWrapper.classList.remove('is-syncing');
+    }
+</script>
+{% endblock %}

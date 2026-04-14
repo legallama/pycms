@@ -57,6 +57,11 @@
       document.documentElement.setAttribute('data-theme', 'dark');
     }
   </script>
+
+  {% if request.args.get('editing') == '1' %}
+  <link rel="stylesheet" href="/static/admin/css/editor.css" />
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+  {% endif %}
 </head>
 
 <body data-canvas-style="{{ theme_custom.get('bg_pattern', 'none') }}" data-glow-style="{{ theme_custom.get('glow_style', 'ambient') }}">
@@ -961,6 +966,56 @@
         }
     });
   </script>
+  {% if request.args.get('editing') == '1' %}
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Initialize Sortable on each position
+        document.querySelectorAll('.cms-position-container').forEach(el => {
+            new Sortable(el, {
+                group: 'blocks',
+                draggable: '.cms-block-wrapper',  // ONLY drag blocks, not insert points
+                animation: 150,
+                handle: '.cms-block-actions',
+                ghostClass: 'sortable-ghost',
+                onEnd: function (evt) {
+                    const blockId = evt.item.getAttribute('data-block-id');
+                    const newPosition = evt.to.getAttribute('data-position');
+                    const newOrder = Array.from(evt.to.querySelectorAll('.cms-block-wrapper')).indexOf(evt.item);
+                    
+                    // Notify parent window of the change
+                    if (window.parent && window.parent.onBlockMoved) {
+                        window.parent.onBlockMoved(blockId, newPosition, newOrder);
+                    }
+                }
+            });
+        });
+
+        // Click to select block
+        document.addEventListener('click', (e) => {
+            const wrapper = e.target.closest('.cms-block-wrapper');
+            if (wrapper) {
+                document.querySelectorAll('.cms-block-wrapper').forEach(el => el.classList.remove('is-selected'));
+                wrapper.classList.add('is-selected');
+                
+                const blockId = wrapper.getAttribute('data-block-id');
+                if (window.parent && window.parent.openBlockEditor) {
+                    window.parent.openBlockEditor(blockId);
+                }
+            }
+        });
+        window.addEventListener('message', (e) => {
+            if (e.data && e.data.type === 'SELECT_BLOCK') {
+                document.querySelectorAll('.cms-block-wrapper').forEach(el => el.classList.remove('is-selected'));
+                const wrapper = document.querySelector(`.cms-block-wrapper[data-block-id="${e.data.id}"]`);
+                if (wrapper) {
+                    wrapper.classList.add('is-selected');
+                    wrapper.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+        });
+    });
+  </script>
+  {% endif %}
 </body>
 
 </html>

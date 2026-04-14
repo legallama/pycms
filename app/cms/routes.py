@@ -7,11 +7,12 @@ from flask_login import current_user, login_required
 
 from ..auth import require_roles
 from ..extensions import db
-from ..models.cms import Page, Post, PublishStatus
+from ..models.cms import Page, Post, PublishStatus, Revision
 from ..models.navigation import Menu
 from ..models.user import UserRole
 from .forms import PageForm, PostForm
 from ..templating import get_layouts
+from ..utils.audit import log_action, save_revision, PreviewHelper
 
 cms_bp = Blueprint("cms", __name__, template_folder="../templates")
 
@@ -78,6 +79,8 @@ def pages_new():
             )
             db.session.add(page)
             db.session.commit()
+            save_revision(page, note="Initial creation")
+            log_action("Page Created", details=f"Title: {page.title}", target_type="page", target_id=page.id)
             flash("Page created.", "success")
             return redirect(url_for("cms.pages_list"))
 
@@ -126,10 +129,16 @@ def pages_edit(page_id: int):
             page.meta_description = form.meta_description.data
             page.meta_keywords = form.meta_keywords.data
             db.session.commit()
+            save_revision(page, note=request.form.get("revision_note", "Regular update"))
+            log_action("Page Updated", details=f"Title: {page.title}", target_type="page", target_id=page.id)
             flash("Page updated.", "success")
             return redirect(url_for("cms.pages_list"))
 
-    return render_template("admin/pages/edit.html", form=form, page=page)
+    preview_token = PreviewHelper.generate_token("page", page.id)
+    revisions = db.session.execute(
+        db.select(Revision).where(Revision.target_type == "page", Revision.target_id == page.id).order_by(Revision.created_at.desc())
+    ).scalars().all()
+    return render_template("admin/pages/edit.html", form=form, page=page, preview_token=preview_token, revisions=revisions)
 
 
 @cms_bp.get("/posts")
@@ -179,6 +188,8 @@ def posts_new():
             )
             db.session.add(post)
             db.session.commit()
+            save_revision(post, note="Initial creation")
+            log_action("Post Created", details=f"Title: {post.title}", target_type="post", target_id=post.id)
             flash("Post created.", "success")
             return redirect(url_for("cms.posts_list"))
 
@@ -217,8 +228,50 @@ def posts_edit(post_id: int):
             post.meta_description = form.meta_description.data
             post.meta_keywords = form.meta_keywords.data
             db.session.commit()
+            save_revision(post, note=request.form.get("revision_note", "Regular update"))
+            log_action("Post Updated", details=f"Title: {post.title}", target_type="post", target_id=post.id)
             flash("Post updated.", "success")
             return redirect(url_for("cms.posts_list"))
 
-    return render_template("admin/posts/edit.html", form=form, post=post)
+    preview_token = PreviewHelper.generate_token("post", post.id)
+    revisions = db.session.execute(
+        db.select(Revision).where(Revision.target_type == "post", Revision.target_id == post.id).order_by(Revision.created_at.desc())
+    ).scalars().all()
+    return render_template("admin/posts/edit.html", form=form, post=post, preview_token=preview_token, revisions=revisions)
+
+
+@cms_bp.post("/revisions/<int:rev_id>/restore")
+@login_required
+@require_roles(UserRole.ADMIN, UserRole.EDITOR)
+def revision_restore(rev_id: int):
+    from ..models.cms import Revision
+    rev = db.session.get(Revision, rev_id)
+    if not rev: abort(404)
+    
+    import json
+    data = json.loads(rev.data_json)
+    
+    if rev.target_type == "page":
+        obj = db.session.get(Page, rev.target_id)
+    else:
+        obj = db.session.get(Post, rev.target_id)
+        
+    if not obj: abort(404)
+    
+    # Restore fields
+    for key, val in data.items():
+        if hasattr(obj, key) and key not in ("id", "created_at", "updated_at"):
+            # Handle datetime strings if any
+            if key == "published_at" and val:
+                val = datetime.fromisoformat(val)
+            setattr(obj, key, val)
+    
+    db.session.commit()
+    log_action("Revision Restored", details=f"Restored to revision from {rev.created_at}", target_type=rev.target_type, target_id=obj.id)
+    save_revision(obj, note=f"Restored from version {rev.id}")
+    
+    flash(f"Restored to version from {rev.created_at.strftime('%b %d, %H:%M')}", "success")
+    if rev.target_type == "page":
+        return redirect(url_for('cms.pages_edit', page_id=obj.id))
+    return redirect(url_for('cms.posts_edit', post_id=obj.id))
 
